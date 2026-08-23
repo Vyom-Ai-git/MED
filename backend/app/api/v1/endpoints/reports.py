@@ -191,3 +191,160 @@ def download_report_pdf(
         },
     )
 
+
+@router.get("/{id}/metadata", response_model=dict)
+def get_report_metadata(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get detailed report metadata including verification details, file hashes, and download links.
+    """
+    report = report_repo.get_by_id(db, org_id=current_user.organization_id, id=id)
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    order = report.order
+    patient = report.patient
+    generator_name = report.generator.name if report.generator else None
+
+    # Check for pathologist verification audit
+    verified_by = None
+    verified_at = None
+    if order and getattr(order, "verified_by", None):
+        from app.models.user import User as UserModel
+        p_user = db.query(UserModel).filter(UserModel.id == getattr(order, "verified_by")).first()
+        if p_user:
+            verified_by = p_user.name
+        verified_at = getattr(order, "verified_at", report.generated_at)
+
+
+    return {
+        "id": report.id,
+        "report_number": report.report_number,
+        "organization_id": report.organization_id,
+        "branch_id": report.branch_id,
+        "order_id": report.order_id,
+        "order_number": order.order_number if order else "",
+        "patient_id": report.patient_id,
+        "patient_mrn": patient.patient_id if patient else "",
+        "patient_name": f"{patient.first_name} {patient.last_name}" if patient else "",
+        "patient_phone": patient.phone if patient else "",
+        "status": report.status,
+        "version": report.version,
+        "file_name": report.file_name,
+        "file_size": report.file_size,
+        "mime_type": report.mime_type,
+        "checksum": report.checksum,
+        "page_count": getattr(report, "page_count", 1) or 1,
+        "generated_at": report.generated_at,
+        "generated_by_name": generator_name,
+        "verification_status": "Verified" if (order and order.status == "Verified") else report.status,
+        "verified_by_pathologist": verified_by,
+        "verified_at": verified_at,
+        "download_url": f"/api/v1/reports/{report.id}/download",
+    }
+
+
+@router.get("/{id}/results", response_model=dict)
+def get_verified_report_results(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get structured JSON verification results data for clinical analysis & M2M orchestrators.
+    """
+    report = report_repo.get_by_id(db, org_id=current_user.organization_id, id=id)
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    order = report.order
+    patient = report.patient
+
+    from app.models.sample import Result, Sample
+    results = []
+    if order:
+        samples = db.query(Sample).filter(Sample.order_id == order.id).all()
+        for sample in samples:
+            test_results = db.query(Result).filter(Result.sample_id == sample.id).all()
+            for tr in test_results:
+                tech_user = db.query(User).filter(User.id == tr.entered_by).first() if tr.entered_by else None
+                path_user = db.query(User).filter(User.id == getattr(order, "verified_by", None)).first() if order and getattr(order, "verified_by", None) else None
+                param_name = tr.parameter.name if tr.parameter else "Parameter"
+                test_name = tr.test.name if tr.test else "Diagnostic Test"
+                val = tr.raw_value or (str(tr.numeric_value) if tr.numeric_value is not None else tr.text_value or "")
+                ref_range = f"{tr.reference_low} - {tr.reference_high}" if (tr.reference_low is not None and tr.reference_high is not None) else None
+                
+                results.append({
+                    "test_code": f"TST-{tr.id:04d}",
+                    "test_name": test_name,
+                    "parameter_name": param_name,
+                    "result_value": val,
+                    "unit": tr.unit,
+                    "reference_range": ref_range,
+                    "flag": tr.abnormal_flag or "Normal",
+                    "status": "Verified" if order and order.status == "Verified" else "Completed",
+                    "technician_name": tech_user.name if tech_user else None,
+                    "pathologist_name": path_user.name if path_user else None,
+                })
+
+
+    verified_by = None
+    if order and getattr(order, "verified_by", None):
+        p_user = db.query(User).filter(User.id == getattr(order, "verified_by", None)).first()
+        if p_user:
+            verified_by = p_user.name
+
+    return {
+        "report_id": report.id,
+        "report_number": report.report_number,
+        "order_id": report.order_id,
+        "order_number": order.order_number if order else "",
+        "patient_id": report.patient_id,
+        "patient_name": f"{patient.first_name} {patient.last_name}" if patient else "",
+        "patient_mrn": patient.patient_id if patient else "",
+        "verified_at": getattr(order, "verified_at", None),
+        "verified_by": verified_by,
+        "overall_status": order.status if order else "Verified",
+        "results": results,
+    }
+
+
+
+@router.post("/{id}/secure-link", response_model=dict)
+def generate_patient_secure_link(
+    id: int,
+    expires_in_hours: int = Query(72, ge=1, le=720),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Generate a secure signed token link for patient-facing report access.
+    """
+    import secrets
+    from datetime import datetime, timezone, timedelta
+
+    report = report_repo.get_by_id(db, org_id=current_user.organization_id, id=id)
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
+
+    report.secure_token = token
+    report.secure_token_expires_at = expires_at
+    db.commit()
+
+    access_url = f"/api/v1/public/reports/access/{token}"
+
+    return {
+        "report_id": report.id,
+        "report_number": report.report_number,
+        "secure_token": token,
+        "expires_at": expires_at,
+        "access_url": access_url,
+    }
+
+

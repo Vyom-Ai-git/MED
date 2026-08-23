@@ -20,6 +20,11 @@ app = FastAPI(
     redoc_url=f"{settings.API_V1_STR}/redoc",
 )
 
+@app.get("/openapi.json", include_in_schema=False)
+async def get_openapi_json():
+    return app.openapi()
+
+
 # CORS Configuration
 # Configured via explicit environment variables
 app.add_middleware(

@@ -1,0 +1,117 @@
+- generic [active] [ref=f11e1]:
+  - button "Open Next.js Dev Tools" [ref=f11e7] [cursor=pointer]
+  - alert [ref=f11e11]
+  - generic [ref=f11e12]:
+    - complementary [ref=f11e13]:
+      - generic [ref=f11e14]:
+        - generic [ref=f11e15]: L
+        - generic [ref=f11e16]:
+          - text: Vyoma LabOS
+          - generic [ref=f11e17]: Core Operations
+      - generic [ref=f11e18]:
+        - generic [ref=f11e19]:
+          - generic [ref=f11e20]: Core Registry
+          - navigation [ref=f11e21]:
+            - link "Dashboard" [ref=f11e22] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Patients" [ref=f11e26] [cursor=pointer]:
+              - /url: /patients
+            - link "Tests Catalog" [ref=f11e33] [cursor=pointer]:
+              - /url: /tests
+            - link "Orders Registry" [ref=f11e37] [cursor=pointer]:
+              - /url: /orders
+        - generic [ref=f11e41]:
+          - generic [ref=f11e42]: Lab Operations
+          - navigation [ref=f11e43]:
+            - link "Samples Tracker" [ref=f11e44] [cursor=pointer]:
+              - /url: /samples
+            - link "Technician Worklist" [ref=f11e50] [cursor=pointer]:
+              - /url: /worklist
+            - link "Verification Queue" [ref=f11e55] [cursor=pointer]:
+              - /url: /verification
+            - link "Reports Registry" [ref=f11e60] [cursor=pointer]:
+              - /url: /reports
+        - generic [ref=f11e65]:
+          - generic [ref=f11e66]: Future Modules
+          - navigation [ref=f11e67]:
+            - generic [ref=f11e68]:
+              - generic [ref=f11e69]: Appointments
+              - generic [ref=f11e73]: Soon
+            - generic [ref=f11e74]:
+              - generic [ref=f11e75]: Communication
+              - generic [ref=f11e79]: Soon
+            - generic [ref=f11e80]:
+              - generic [ref=f11e81]: Analytics
+              - generic [ref=f11e84]: Soon
+        - generic [ref=f11e85]:
+          - generic [ref=f11e86]: Administration
+          - navigation [ref=f11e87]:
+            - link "n8n Integration" [ref=f11e88] [cursor=pointer]:
+              - /url: /settings/integrations
+            - link "Users & Roles" [ref=f11e92] [cursor=pointer]:
+              - /url: /settings/users
+            - link "Audit Trail" [ref=f11e96] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=f11e102]:
+        - generic [ref=f11e103]:
+          - generic [ref=f11e104]: V
+          - generic [ref=f11e105]:
+            - generic [ref=f11e106]: Vivek Admin
+            - generic [ref=f11e107]: admin
+        - button "Sign Out" [ref=f11e108]
+    - generic [ref=f11e113]:
+      - banner [ref=f11e114]:
+        - generic [ref=f11e115]:
+          - generic [ref=f11e116]: LabOS
+          - generic [ref=f11e117]: settings
+          - generic [ref=f11e121]: integrations
+        - generic [ref=f11e125]:
+          - generic [ref=f11e126]: Thu, Aug 13, 2026
+          - generic [ref=f11e135] [cursor=pointer]:
+            - generic [ref=f11e136]: Active Tenant
+            - generic [ref=f11e137]: Vyoma Diagnostics
+          - button [ref=f11e138]
+      - main [ref=f11e143]:
+        - generic [ref=f11e145]:
+          - generic [ref=f11e146]:
+            - generic [ref=f11e147]:
+              - heading "n8n & WhatsApp Automation" [level=1] [ref=f11e148]
+              - paragraph [ref=f11e152]: Configure secure webhook integration for automated report notifications and delivery tracking.
+            - generic [ref=f11e153]:
+              - link [ref=f11e154] [cursor=pointer]:
+                - /url: /settings/integrations/logs
+                - button "View Delivery Logs" [ref=f11e155]
+              - button "Test n8n Connection" [disabled]
+          - generic [ref=f11e162]:
+            - generic [ref=f11e169]:
+              - generic [ref=f11e170]:
+                - heading "n8n Webhook Integration" [level=2] [ref=f11e171]
+                - generic [ref=f11e172]: Checking...
+              - paragraph [ref=f11e174]: Webhook URL not set in environment configuration (N8N_WEBHOOK_URL).
+              - generic [ref=f11e175]:
+                - generic [ref=f11e176]: "Last Successful: Never"
+                - generic [ref=f11e180]: •
+                - generic [ref=f11e181]: HMAC-SHA256 Signed
+            - button "Refresh Status" [disabled]
+          - generic [ref=f11e185]:
+            - generic [ref=f11e187]:
+              - generic [ref=f11e188]: Successfully Sent
+              - generic [ref=f11e194]: "0"
+              - generic [ref=f11e195]: Dispatched to n8n webhook
+            - generic [ref=f11e197]:
+              - generic [ref=f11e198]: Pending Delivery
+              - generic [ref=f11e204]: "0"
+              - generic [ref=f11e205]: Queued or currently retrying
+            - generic [ref=f11e207]:
+              - generic [ref=f11e208]: Failed Delivery
+              - generic [ref=f11e213]: "0"
+              - generic [ref=f11e214]: Manual retry available in logs
+          - generic [ref=f11e216]:
+            - heading "Integration Boundary & Security Policy" [level=3] [ref=f11e217]
+            - generic [ref=f11e222]:
+              - generic [ref=f11e223]:
+                - generic [ref=f11e224]: System of Record Safety
+                - paragraph [ref=f11e225]: LabOS is the single source of clinical truth. Results, reference ranges, and verified PDF reports remain strictly inside LabOS. WhatsApp credentials and third-party delivery logic reside entirely in n8n.
+              - generic [ref=f11e226]:
+                - generic [ref=f11e227]: AI Safety Boundary
+                - paragraph [ref=f11e228]: AI MUST NOT approve lab results, alter flags, diagnose patients, or modify official PDF reports. AI is used solely by n8n for communication formatting with automatic template fallback.

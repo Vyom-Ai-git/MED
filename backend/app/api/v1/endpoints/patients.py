@@ -37,6 +37,71 @@ def get_patients(
         "page_size": page_size
     }
 
+@router.get("/lookup", response_model=dict)
+def lookup_patient_communication(
+    phone: Optional[str] = None,
+    email: Optional[str] = None,
+    patient_id: Optional[str] = None,
+    order_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Patient communication and contact lookup by phone, email, MRN (patient_id), or order_id.
+    """
+    from app.models.patient import Patient
+    from app.models.order import Order
+
+    query = db.query(Patient).filter(Patient.organization_id == current_user.organization_id)
+
+    if order_id:
+        order = db.query(Order).filter(Order.id == order_id, Order.organization_id == current_user.organization_id).first()
+        if not order:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+        query = query.filter(Patient.id == order.patient_id)
+    elif patient_id:
+        query = query.filter(Patient.patient_id == patient_id)
+    elif phone:
+        raw_phone = phone.strip()
+        clean_phone = raw_phone.replace("+", "").replace(" ", "")
+        query = query.filter(
+            (Patient.phone.contains(raw_phone)) |
+            (Patient.phone.contains(clean_phone)) |
+            (Patient.phone.contains(raw_phone.replace(" ", "+")))
+        )
+    elif email:
+        query = query.filter(Patient.email.ilike(f"%{email}%"))
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must provide at least one search query: phone, email, patient_id, or order_id"
+        )
+
+    patient = query.first()
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found")
+
+    recent_orders_count = db.query(Order).filter(Order.patient_id == patient.id).count()
+
+    return {
+        "id": patient.id,
+        "patient_id": patient.patient_id,
+        "first_name": patient.first_name,
+        "last_name": patient.last_name,
+        "full_name": f"{patient.first_name} {patient.last_name}",
+        "date_of_birth": patient.date_of_birth,
+        "gender": patient.gender,
+        "phone": patient.phone,
+        "email": patient.email,
+        "address": patient.address,
+        "emergency_contact": patient.emergency_contact,
+        "communication_preference": patient.communication_preference,
+        "consent_operational": patient.consent_operational,
+        "consent_promotional": patient.consent_promotional,
+        "recent_orders_count": recent_orders_count,
+    }
+
+
 @router.post("", response_model=PatientResponse, status_code=status.HTTP_201_CREATED)
 def create_patient(
     patient_in: PatientCreate,

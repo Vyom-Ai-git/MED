@@ -1,0 +1,114 @@
+- generic [active] [ref=f5e1]:
+  - button "Open Next.js Dev Tools" [ref=f5e7] [cursor=pointer]
+  - alert [ref=f5e11]
+  - generic [ref=f5e12]:
+    - complementary [ref=f5e13]:
+      - generic [ref=f5e14]:
+        - generic [ref=f5e15]: L
+        - generic [ref=f5e16]:
+          - text: Vyoma LabOS
+          - generic [ref=f5e17]: Core Operations
+      - generic [ref=f5e18]:
+        - generic [ref=f5e19]:
+          - generic [ref=f5e20]: Core Registry
+          - navigation [ref=f5e21]:
+            - link "Dashboard" [ref=f5e22] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Patients" [ref=f5e26] [cursor=pointer]:
+              - /url: /patients
+            - link "Tests Catalog" [ref=f5e33] [cursor=pointer]:
+              - /url: /tests
+            - link "Orders Registry" [ref=f5e37] [cursor=pointer]:
+              - /url: /orders
+        - generic [ref=f5e41]:
+          - generic [ref=f5e42]: Lab Operations
+          - navigation [ref=f5e43]:
+            - link "Samples Tracker" [ref=f5e44] [cursor=pointer]:
+              - /url: /samples
+            - link "Technician Worklist" [ref=f5e50] [cursor=pointer]:
+              - /url: /worklist
+            - link "Verification Queue" [ref=f5e55] [cursor=pointer]:
+              - /url: /verification
+            - link "Reports Registry" [ref=f5e60] [cursor=pointer]:
+              - /url: /reports
+        - generic [ref=f5e65]:
+          - generic [ref=f5e66]: Future Modules
+          - navigation [ref=f5e67]:
+            - generic [ref=f5e68]:
+              - generic [ref=f5e69]: Appointments
+              - generic [ref=f5e73]: Soon
+            - generic [ref=f5e74]:
+              - generic [ref=f5e75]: Communication
+              - generic [ref=f5e79]: Soon
+            - generic [ref=f5e80]:
+              - generic [ref=f5e81]: Analytics
+              - generic [ref=f5e84]: Soon
+        - generic [ref=f5e85]:
+          - generic [ref=f5e86]: Administration
+          - navigation [ref=f5e87]:
+            - link "n8n Integration" [ref=f5e88] [cursor=pointer]:
+              - /url: /settings/integrations
+            - link "Users & Roles" [ref=f5e92] [cursor=pointer]:
+              - /url: /settings/users
+            - link "Audit Trail" [ref=f5e96] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=f5e102]:
+        - generic [ref=f5e103]:
+          - generic [ref=f5e104]: V
+          - generic [ref=f5e105]:
+            - generic [ref=f5e106]: Vivek Admin
+            - generic [ref=f5e107]: admin
+        - button "Sign Out" [ref=f5e108]
+    - generic [ref=f5e113]:
+      - banner [ref=f5e114]:
+        - generic [ref=f5e115]:
+          - generic [ref=f5e116]: LabOS
+          - generic [ref=f5e117]: samples
+        - generic [ref=f5e121]:
+          - generic [ref=f5e122]: Thu, Aug 13, 2026
+          - generic [ref=f5e131] [cursor=pointer]:
+            - generic [ref=f5e132]: Active Tenant
+            - generic [ref=f5e133]: Vyoma Diagnostics
+          - button [ref=f5e134]
+      - main [ref=f5e139]:
+        - generic [ref=f5e141]:
+          - generic [ref=f5e142]:
+            - generic [ref=f5e143]:
+              - generic [ref=f5e144]: Laboratory Specimen Registry
+              - heading "Samples Tracker" [level=1] [ref=f5e146]
+              - paragraph [ref=f5e147]: Track laboratory specimens from collection through processing and recollection.
+            - button "Refresh" [ref=f5e149]
+          - generic [ref=f5e156]:
+            - 'textbox "Search Sample ID, Order #, Patient name or phone..." [ref=f5e161]'
+            - generic [ref=f5e162]:
+              - combobox [ref=f5e163]:
+                - option "All Statuses" [selected]
+                - option "Registered"
+                - option "Collected"
+                - option "Processing"
+                - option "Completed"
+                - option "Rejected"
+                - option "Recollection Required"
+              - combobox [ref=f5e164]:
+                - option "All Sample Types" [selected]
+                - option "Blood"
+                - option "Serum"
+                - option "Plasma"
+                - option "Urine"
+                - option "Stool"
+                - option "Swab"
+                - option "Other"
+          - table [ref=f5e168]:
+            - rowgroup [ref=f5e169]:
+              - row [ref=f5e170]:
+                - columnheader "Priority" [ref=f5e171]
+                - columnheader "Sample ID" [ref=f5e172]
+                - 'columnheader "Order #" [ref=f5e173]'
+                - columnheader "Patient" [ref=f5e174]
+                - columnheader "Sample Type" [ref=f5e175]
+                - columnheader "Status" [ref=f5e176]
+                - columnheader "Collected At" [ref=f5e177]
+                - columnheader "Actions" [ref=f5e178]
+            - rowgroup [ref=f5e179]:
+              - row [ref=f5e180]:
+                - cell "Loading sample registry..." [ref=f5e181]

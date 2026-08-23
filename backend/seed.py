@@ -282,9 +282,82 @@ def seed_data():
         ))
 
         db.add_all([order1, order2, order3])
+        db.flush()
+
+        # 7. Create Demo Doctors & Schedule Slots
+        from app.models.doctor import Doctor, DoctorScheduleSlot
+        from app.models.booking import DoctorAppointment, LabBooking
+        from app.models.customer_care import CustomerCareHandoff
+        from datetime import time
+
+        doc1 = Doctor(
+            organization_id=org.id,
+            branch_id=branch.id,
+            doctor_code="DOC-2026-001",
+            name="Dr. Amit Shah",
+            specialty="General Physician",
+            qualification="MBBS, MD",
+            phone="+91 98765 11111",
+            email="dramit@vyoma.com",
+            consultation_fee=Decimal("500.00"),
+            bio="Senior consultant physician with 15+ years experience.",
+            is_active=True,
+        )
+        doc2 = Doctor(
+            organization_id=org.id,
+            branch_id=branch.id,
+            doctor_code="DOC-2026-002",
+            name="Dr. Sunita Rao",
+            specialty="Endocrinologist",
+            qualification="MD, DM (Endocrinology)",
+            phone="+91 98765 22222",
+            email="drsunita@vyoma.com",
+            consultation_fee=Decimal("800.00"),
+            bio="Specialist in diabetes, thyroid, and metabolic disorders.",
+            is_active=True,
+        )
+        db.add_all([doc1, doc2])
+        db.flush()
+
+        slot1 = DoctorScheduleSlot(
+            doctor_id=doc1.id,
+            branch_id=branch.id,
+            slot_date=date(2026, 8, 20),
+            start_time=time(10, 0),
+            end_time=time(10, 30),
+            consultation_type="in_person",
+            is_booked=False,
+        )
+        slot2 = DoctorScheduleSlot(
+            doctor_id=doc1.id,
+            branch_id=branch.id,
+            slot_date=date(2026, 8, 20),
+            start_time=time(11, 0),
+            end_time=time(11, 30),
+            consultation_type="tele_consult",
+            is_booked=False,
+        )
+        db.add_all([slot1, slot2])
+        db.flush()
+
+        # 8. Create Demo Customer Care Handoff Ticket
+        tkt = CustomerCareHandoff(
+            organization_id=org.id,
+            ticket_number="TKT-2026-00001",
+            patient_id=jane.id,
+            order_id=order1.id,
+            channel="whatsapp",
+            category="report_query",
+            priority="normal",
+            summary="Patient asking for status update on HbA1c test report",
+            status="Open",
+        )
+        db.add(tkt)
+
         db.commit()
-        print("Created Phase 3 laboratory orders (multi-test, paid, cancelled) successfully.")
+        print("Created Phase 3 laboratory orders & 11 integration capability seed records successfully.")
         print("--- SEED COMPLETED SUCCESSFULLY ---")
+
         
     except Exception as e:
         db.rollback()

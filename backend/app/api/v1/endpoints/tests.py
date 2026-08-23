@@ -30,7 +30,7 @@ def get_tests(
     """
     items, total = test_repo.search_tests(
         db, 
-        organization_id=current_user.organization_id, 
+        org_id=current_user.organization_id, 
         q=q, 
         category=category, 
         status=status,
@@ -43,6 +43,57 @@ def get_tests(
         "page": page,
         "page_size": page_size
     }
+
+@router.get("/catalog", response_model=dict)
+def get_test_catalog(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    q: Optional[str] = None,
+    category: Optional[str] = None,
+):
+    """
+    Get full active test catalog with preparation guidelines (fasting), turnaround times (TAT), and pricing.
+    """
+    items, total = test_repo.search_tests(
+        db, 
+        org_id=current_user.organization_id, 
+        q=q, 
+        category=category, 
+        status="active",
+        page=1, 
+        page_size=100
+    )
+
+    catalog_items = []
+    for test in items:
+        params_summary = []
+        for p in test.parameters:
+            params_summary.append({
+                "name": p.name,
+                "code": p.code,
+                "unit": p.unit,
+                "reference_range": p.reference_range,
+            })
+        
+        catalog_items.append({
+            "id": test.id,
+            "code": test.code,
+            "name": test.name,
+            "category": test.category,
+            "description": test.description,
+            "price": float(test.price),
+            "status": test.status,
+            "fasting_required": "fasting" in (test.description or "").lower(),
+            "turnaround_time": "24 Hours",
+            "parameters_count": len(test.parameters),
+            "parameters": params_summary,
+        })
+
+    return {
+        "items": catalog_items,
+        "total": total,
+    }
+
 
 @router.post("", response_model=TestResponse, status_code=status.HTTP_201_CREATED)
 def create_test(

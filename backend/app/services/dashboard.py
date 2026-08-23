@@ -220,9 +220,10 @@ class DashboardService:
     ) -> DashboardWorkloadResponse:
         start_date, end_date = self._get_date_range(range_type, start_date_str, end_date_str)
 
-        # Orders aggregation by date
+        # Orders aggregation by date — strftime returns plain string, works on SQLite + PostgreSQL
+        from sqlalchemy import text as sa_text
         ord_q = db.query(
-            cast(Order.created_at, Date).label("day"),
+            func.strftime("%Y-%m-%d", Order.created_at).label("day"),
             func.count(Order.id).label("cnt")
         ).filter(
             Order.organization_id == org_id,
@@ -231,11 +232,11 @@ class DashboardService:
         )
         if branch_id:
             ord_q = ord_q.filter(Order.branch_id == branch_id)
-        ord_counts = {str(r.day): r.cnt for r in ord_q.group_by(cast(Order.created_at, Date)).all()}
+        ord_counts = {r.day: r.cnt for r in ord_q.group_by(func.strftime("%Y-%m-%d", Order.created_at)).all()}
 
-        # Samples aggregation by date
+        # Samples aggregation by date — strftime returns plain string, works on SQLite + PostgreSQL
         smp_q = db.query(
-            cast(Sample.created_at, Date).label("day"),
+            func.strftime("%Y-%m-%d", Sample.created_at).label("day"),
             func.count(Sample.id).label("cnt")
         ).filter(
             Sample.organization_id == org_id,
@@ -244,7 +245,7 @@ class DashboardService:
         )
         if branch_id:
             smp_q = smp_q.filter(Sample.branch_id == branch_id)
-        smp_counts = {str(r.day): r.cnt for r in smp_q.group_by(cast(Sample.created_at, Date)).all()}
+        smp_counts = {r.day: r.cnt for r in smp_q.group_by(func.strftime("%Y-%m-%d", Sample.created_at)).all()}
 
         # Build contiguous date list
         curr = start_date.date()

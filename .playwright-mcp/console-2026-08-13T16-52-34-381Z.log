@@ -1,0 +1,8 @@
+[      91ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1e8vcs8._.js:776
+[      98ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1e8vcs8._.js:776
+[     160ms] [ERROR] Access to fetch at 'http://localhost:8000/api/v1/tests?page=1&page_size=10' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:3000/tests:0
+[     160ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:8000/api/v1/tests?page=1&page_size=10:0
+[     184ms] [ERROR] Access to fetch at 'http://localhost:8000/api/v1/tests?page=1&page_size=10' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:3000/tests:0
+[     184ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:8000/api/v1/tests?page=1&page_size=10:0
+[   15215ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/hmr?id=vCnpEi7t3Eul6_Xlesujg' failed:  @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0_90u2t._.js:16256
+[   16222ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1e8vcs8._.js:776

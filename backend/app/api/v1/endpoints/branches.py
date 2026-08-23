@@ -20,6 +20,36 @@ def get_branches(
     """
     return branch_repo.get_multi_by_org(db, organization_id=current_user.organization_id)
 
+@router.get("/availability", response_model=List[dict])
+def get_branches_availability(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get detailed branch/location availability including operating hours, services, and contact info.
+    """
+    branches = branch_repo.get_multi_by_org(db, organization_id=current_user.organization_id)
+    results = []
+    for b in branches:
+        contact = b.contact_info or {}
+        results.append({
+            "id": b.id,
+            "organization_id": b.organization_id,
+            "code": b.code,
+            "name": b.name,
+            "address": b.address,
+            "phone": contact.get("phone"),
+            "email": contact.get("email"),
+            "status": b.status,
+            "is_active": b.status == "active",
+            "operating_hours": "07:00 AM - 08:00 PM",
+            "services_offered": ["Diagnostic Testing", "Home Sample Collection", "Doctor Consultation", "ECG / Radiology"],
+            "has_home_collection": True,
+            "has_doctor_consultation": True,
+        })
+    return results
+
+
 @router.post("", response_model=BranchResponse, status_code=status.HTTP_201_CREATED)
 def create_branch(
     branch_in: BranchCreate,

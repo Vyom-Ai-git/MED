@@ -1,0 +1,137 @@
+- generic [ref=f4e1]:
+  - button "Open Next.js Dev Tools" [ref=f4e7] [cursor=pointer]
+  - alert [ref=f4e11]
+  - generic [ref=f4e12]:
+    - complementary [ref=f4e13]:
+      - generic [ref=f4e14]:
+        - generic [ref=f4e15]: L
+        - generic [ref=f4e16]:
+          - text: Vyoma LabOS
+          - generic [ref=f4e17]: Core Operations
+      - generic [ref=f4e18]:
+        - generic [ref=f4e19]:
+          - generic [ref=f4e20]: Core Registry
+          - navigation [ref=f4e21]:
+            - link "Dashboard" [ref=f4e22] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Patients" [ref=f4e26] [cursor=pointer]:
+              - /url: /patients
+            - link "Tests Catalog" [ref=f4e33] [cursor=pointer]:
+              - /url: /tests
+            - link "Orders Registry" [ref=f4e37] [cursor=pointer]:
+              - /url: /orders
+        - generic [ref=f4e41]:
+          - generic [ref=f4e42]: Lab Operations
+          - navigation [ref=f4e43]:
+            - link "Samples Tracker" [ref=f4e44] [cursor=pointer]:
+              - /url: /samples
+            - link "Technician Worklist" [ref=f4e50] [cursor=pointer]:
+              - /url: /worklist
+            - link "Verification Queue" [ref=f4e55] [cursor=pointer]:
+              - /url: /verification
+            - link "Reports Registry" [ref=f4e60] [cursor=pointer]:
+              - /url: /reports
+        - generic [ref=f4e65]:
+          - generic [ref=f4e66]: Future Modules
+          - navigation [ref=f4e67]:
+            - generic [ref=f4e68]:
+              - generic [ref=f4e69]: Appointments
+              - generic [ref=f4e73]: Soon
+            - generic [ref=f4e74]:
+              - generic [ref=f4e75]: Communication
+              - generic [ref=f4e79]: Soon
+            - generic [ref=f4e80]:
+              - generic [ref=f4e81]: Analytics
+              - generic [ref=f4e84]: Soon
+        - generic [ref=f4e85]:
+          - generic [ref=f4e86]: Administration
+          - navigation [ref=f4e87]:
+            - link "n8n Integration" [ref=f4e88] [cursor=pointer]:
+              - /url: /settings/integrations
+            - link "Users & Roles" [ref=f4e92] [cursor=pointer]:
+              - /url: /settings/users
+            - link "Audit Trail" [ref=f4e96] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=f4e102]:
+        - generic [ref=f4e103]:
+          - generic [ref=f4e104]: V
+          - generic [ref=f4e105]:
+            - generic [ref=f4e106]: Vivek Admin
+            - generic [ref=f4e107]: admin
+        - button "Sign Out" [ref=f4e108]
+    - generic [ref=f4e113]:
+      - banner [ref=f4e114]:
+        - generic [ref=f4e115]:
+          - generic [ref=f4e116]: LabOS
+          - generic [ref=f4e117]: orders
+          - generic [ref=f4e121]: new
+        - generic [ref=f4e125]:
+          - generic [ref=f4e126]: Thu, Aug 13, 2026
+          - generic [ref=f4e135] [cursor=pointer]:
+            - generic [ref=f4e136]: Active Tenant
+            - generic [ref=f4e137]: Vyoma Diagnostics
+          - button [ref=f4e138]
+      - main [ref=f4e143]:
+        - generic [ref=f4e145]:
+          - generic [ref=f4e146]:
+            - button [ref=f4e147]
+            - generic [ref=f4e150]:
+              - heading "Create New Order" [level=1] [ref=f4e151]
+              - paragraph [ref=f4e152]: Select patient, add tests, review and confirm
+          - generic [ref=f4e154]:
+            - generic [ref=f4e155]:
+              - generic [ref=f4e156]: "1"
+              - heading "Patient" [level=2] [ref=f4e160]
+            - generic [ref=f4e162]:
+              - textbox "Search by name, patient ID, or phone..." [active] [ref=f4e167]
+              - paragraph [ref=f4e168]: Search by patient name, ID (PAT-...), or phone number
+          - generic [ref=f4e170]:
+            - generic [ref=f4e171]:
+              - generic [ref=f4e172]: "2"
+              - heading "Tests" [level=2] [ref=f4e175]
+            - generic [ref=f4e178]:
+              - textbox "Search by test name or code..." [ref=f4e183]
+              - combobox [ref=f4e185]:
+                - option "All Categories" [selected]
+          - generic [ref=f4e187]:
+            - generic [ref=f4e188]:
+              - generic [ref=f4e189]: "3"
+              - heading "Review & Payment" [level=2] [ref=f4e193]
+            - generic [ref=f4e195]:
+              - generic [ref=f4e197]:
+                - generic [ref=f4e198]:
+                  - generic [ref=f4e199]: Subtotal
+                  - generic [ref=f4e200]: ₹0.00
+                - generic [ref=f4e201]:
+                  - generic [ref=f4e202]: Discount (₹)
+                  - spinbutton [ref=f4e203]: "0"
+                - generic [ref=f4e204]:
+                  - generic [ref=f4e205]: Tax
+                  - generic [ref=f4e206]: ₹0.00
+                - generic [ref=f4e208]:
+                  - generic [ref=f4e209]: Total
+                  - generic [ref=f4e210]: ₹0.00
+              - generic [ref=f4e211]:
+                - generic [ref=f4e212]:
+                  - paragraph [ref=f4e213]: Payment Status
+                  - generic [ref=f4e214]:
+                    - button [ref=f4e215]:
+                      - generic [ref=f4e219]:
+                        - paragraph [ref=f4e220]: Pending
+                        - paragraph [ref=f4e221]: Payment to be collected
+                    - button [ref=f4e222]:
+                      - generic [ref=f4e225]:
+                        - paragraph [ref=f4e226]: Paid
+                        - paragraph [ref=f4e227]: Payment collected in full
+                    - button [ref=f4e228]:
+                      - generic [ref=f4e231]:
+                        - paragraph [ref=f4e232]: Partial
+                        - paragraph [ref=f4e233]: Partial payment received
+                - generic [ref=f4e234]:
+                  - generic [ref=f4e235]: Notes (Optional)
+                  - textbox "Any special instructions or notes..." [ref=f4e236]
+          - generic [ref=f4e237]:
+            - generic [ref=f4e238]: ⬆ Select a patient to continue
+            - generic [ref=f4e239]:
+              - button "Cancel" [ref=f4e240]
+              - button "Create Order" [disabled]

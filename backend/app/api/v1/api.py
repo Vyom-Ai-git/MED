@@ -14,6 +14,10 @@ from app.api.v1.endpoints import (
     audit,
     dashboard,
     integrations,
+    doctors,
+    bookings,
+    customer_care,
+    public,
 )
 
 api_router = APIRouter()
@@ -32,6 +36,11 @@ api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(integrations.router, prefix="/integrations", tags=["integrations"])
+api_router.include_router(doctors.router, prefix="/doctors", tags=["doctors"])
+api_router.include_router(bookings.router, prefix="/bookings", tags=["bookings"])
+api_router.include_router(customer_care.router, prefix="/customer-care", tags=["customer-care"])
+api_router.include_router(public.router, prefix="/public", tags=["public"])
+
 
 
 

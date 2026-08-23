@@ -21,6 +21,9 @@ class Report(Base):
     file_size = Column(BigInteger, nullable=False)
     mime_type = Column(String, default="application/pdf", nullable=False)
     checksum = Column(String, nullable=False)  # SHA-256 hash
+    page_count = Column(Integer, default=1, nullable=False)
+    secure_token = Column(String, unique=True, index=True, nullable=True)
+    secure_token_expires_at = Column(DateTime, nullable=True)
 
     generated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     generated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

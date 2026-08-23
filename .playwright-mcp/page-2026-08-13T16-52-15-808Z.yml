@@ -1,0 +1,258 @@
+- generic [active] [ref=f9e1]:
+  - button "Open Next.js Dev Tools" [ref=f9e7] [cursor=pointer]
+  - alert [ref=f9e11]
+  - generic [ref=f9e12]:
+    - complementary [ref=f9e13]:
+      - generic [ref=f9e14]:
+        - generic [ref=f9e15]: L
+        - generic [ref=f9e16]:
+          - text: Vyoma LabOS
+          - generic [ref=f9e17]: Core Operations
+      - generic [ref=f9e18]:
+        - generic [ref=f9e19]:
+          - generic [ref=f9e20]: Core Registry
+          - navigation [ref=f9e21]:
+            - link "Dashboard" [ref=f9e22] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Patients" [ref=f9e26] [cursor=pointer]:
+              - /url: /patients
+            - link "Tests Catalog" [ref=f9e33] [cursor=pointer]:
+              - /url: /tests
+            - link "Orders Registry" [ref=f9e37] [cursor=pointer]:
+              - /url: /orders
+        - generic [ref=f9e41]:
+          - generic [ref=f9e42]: Lab Operations
+          - navigation [ref=f9e43]:
+            - link "Samples Tracker" [ref=f9e44] [cursor=pointer]:
+              - /url: /samples
+            - link "Technician Worklist" [ref=f9e50] [cursor=pointer]:
+              - /url: /worklist
+            - link "Verification Queue" [ref=f9e55] [cursor=pointer]:
+              - /url: /verification
+            - link "Reports Registry" [ref=f9e60] [cursor=pointer]:
+              - /url: /reports
+        - generic [ref=f9e65]:
+          - generic [ref=f9e66]: Future Modules
+          - navigation [ref=f9e67]:
+            - generic [ref=f9e68]:
+              - generic [ref=f9e69]: Appointments
+              - generic [ref=f9e73]: Soon
+            - generic [ref=f9e74]:
+              - generic [ref=f9e75]: Communication
+              - generic [ref=f9e79]: Soon
+            - generic [ref=f9e80]:
+              - generic [ref=f9e81]: Analytics
+              - generic [ref=f9e84]: Soon
+        - generic [ref=f9e85]:
+          - generic [ref=f9e86]: Administration
+          - navigation [ref=f9e87]:
+            - link "n8n Integration" [ref=f9e88] [cursor=pointer]:
+              - /url: /settings/integrations
+            - link "Users & Roles" [ref=f9e92] [cursor=pointer]:
+              - /url: /settings/users
+            - link "Audit Trail" [ref=f9e96] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=f9e102]:
+        - generic [ref=f9e103]:
+          - generic [ref=f9e104]: V
+          - generic [ref=f9e105]:
+            - generic [ref=f9e106]: Vivek Admin
+            - generic [ref=f9e107]: admin
+        - button "Sign Out" [ref=f9e108]
+    - generic [ref=f9e113]:
+      - banner [ref=f9e114]:
+        - generic [ref=f9e115]:
+          - generic [ref=f9e116]: LabOS
+          - generic [ref=f9e117]: audit
+        - generic [ref=f9e121]:
+          - generic [ref=f9e122]: Thu, Aug 13, 2026
+          - generic [ref=f9e131] [cursor=pointer]:
+            - generic [ref=f9e132]: Active Tenant
+            - generic [ref=f9e133]: Vyoma Diagnostics
+          - button [ref=f9e134]
+      - main [ref=f9e139]:
+        - generic [ref=f9e141]:
+          - generic [ref=f9e142]:
+            - generic [ref=f9e143]:
+              - heading "Audit Trail" [level=1] [ref=f9e149]
+              - paragraph [ref=f9e150]: System activity and laboratory traceability registry
+            - button "Refresh Log" [ref=f9e151]
+          - generic [ref=f9e158]:
+            - textbox "Search by Entity ID, Action, Description or User..." [ref=f9e163]
+            - generic [ref=f9e164]:
+              - combobox [ref=f9e165]:
+                - option "All Entity Types" [selected]
+                - option "PATIENT"
+                - option "ORDER"
+                - option "SAMPLE"
+                - option "RESULT"
+                - option "VERIFICATION"
+                - option "REPORT"
+                - option "USER"
+                - option "AUTHENTICATION"
+              - combobox [ref=f9e166]:
+                - option "All Actions" [selected]
+                - option "LOGIN_SUCCESS"
+                - option "LOGIN_FAILURE"
+                - option "PATIENT_CREATED"
+                - option "ORDER_CREATED"
+                - option "SAMPLE_CREATED"
+                - option "SAMPLE_COLLECTED"
+                - option "SAMPLE_REJECTED"
+                - option "RESULT_SUBMITTED"
+                - option "RESULT_APPROVED"
+                - option "RESULT_RETURNED_FOR_CORRECTION"
+                - option "REPORT_GENERATED"
+                - option "REPORT_DOWNLOADED"
+                - option "USER_CREATED"
+              - button "Search" [ref=f9e167]
+          - generic [ref=f9e168]:
+            - table [ref=f9e170]:
+              - rowgroup [ref=f9e171]:
+                - row [ref=f9e172]:
+                  - columnheader "Timestamp" [ref=f9e173]
+                  - columnheader "User" [ref=f9e174]
+                  - columnheader "Action" [ref=f9e175]
+                  - columnheader "Entity" [ref=f9e176]
+                  - columnheader "Entity ID" [ref=f9e177]
+                  - columnheader "Status" [ref=f9e178]
+                  - columnheader "Details" [ref=f9e179]
+              - rowgroup [ref=f9e180]:
+                - row [ref=f9e181]:
+                  - cell "13 Aug 2026, 16:51:02" [ref=f9e182]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e183]:
+                    - generic [ref=f9e184]:
+                      - generic [ref=f9e185]: Vivek Admin
+                      - generic [ref=f9e186]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e187]
+                  - cell "AUTHENTICATION" [ref=f9e189]
+                  - cell "1" [ref=f9e190]
+                  - cell "Success" [ref=f9e191]
+                  - cell [ref=f9e196]:
+                    - button "Inspect" [ref=f9e197]
+                - row [ref=f9e198]:
+                  - cell "13 Aug 2026, 16:50:00" [ref=f9e199]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e200]:
+                    - generic [ref=f9e201]:
+                      - generic [ref=f9e202]: Vivek Admin
+                      - generic [ref=f9e203]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e204]
+                  - cell "AUTHENTICATION" [ref=f9e206]
+                  - cell "1" [ref=f9e207]
+                  - cell "Success" [ref=f9e208]
+                  - cell [ref=f9e213]:
+                    - button "Inspect" [ref=f9e214]
+                - row [ref=f9e215]:
+                  - cell "13 Aug 2026, 16:49:13" [ref=f9e216]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e217]:
+                    - generic [ref=f9e218]:
+                      - generic [ref=f9e219]: Vivek Admin
+                      - generic [ref=f9e220]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e221]
+                  - cell "AUTHENTICATION" [ref=f9e223]
+                  - cell "1" [ref=f9e224]
+                  - cell "Success" [ref=f9e225]
+                  - cell [ref=f9e230]:
+                    - button "Inspect" [ref=f9e231]
+                - row [ref=f9e232]:
+                  - cell "13 Aug 2026, 16:48:14" [ref=f9e233]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e234]:
+                    - generic [ref=f9e235]:
+                      - generic [ref=f9e236]: Vivek Admin
+                      - generic [ref=f9e237]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e238]
+                  - cell "AUTHENTICATION" [ref=f9e240]
+                  - cell "1" [ref=f9e241]
+                  - cell "Success" [ref=f9e242]
+                  - cell [ref=f9e247]:
+                    - button "Inspect" [ref=f9e248]
+                - row [ref=f9e249]:
+                  - cell "13 Aug 2026, 16:48:08" [ref=f9e250]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e251]:
+                    - generic [ref=f9e252]:
+                      - generic [ref=f9e253]: Vivek Admin
+                      - generic [ref=f9e254]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e255]
+                  - cell "AUTHENTICATION" [ref=f9e257]
+                  - cell "1" [ref=f9e258]
+                  - cell "Success" [ref=f9e259]
+                  - cell [ref=f9e264]:
+                    - button "Inspect" [ref=f9e265]
+                - row [ref=f9e266]:
+                  - cell "13 Aug 2026, 16:47:12" [ref=f9e267]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e268]:
+                    - generic [ref=f9e269]:
+                      - generic [ref=f9e270]: Vivek Admin
+                      - generic [ref=f9e271]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e272]
+                  - cell "AUTHENTICATION" [ref=f9e274]
+                  - cell "1" [ref=f9e275]
+                  - cell "Success" [ref=f9e276]
+                  - cell [ref=f9e281]:
+                    - button "Inspect" [ref=f9e282]
+                - row [ref=f9e283]:
+                  - cell "13 Aug 2026, 16:42:38" [ref=f9e284]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e285]:
+                    - generic [ref=f9e286]:
+                      - generic [ref=f9e287]: Vivek Admin
+                      - generic [ref=f9e288]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e289]
+                  - cell "AUTHENTICATION" [ref=f9e291]
+                  - cell "1" [ref=f9e292]
+                  - cell "Success" [ref=f9e293]
+                  - cell [ref=f9e298]:
+                    - button "Inspect" [ref=f9e299]
+                - row [ref=f9e300]:
+                  - cell "13 Aug 2026, 16:17:29" [ref=f9e301]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e302]:
+                    - generic [ref=f9e303]:
+                      - generic [ref=f9e304]: Vivek Admin
+                      - generic [ref=f9e305]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e306]
+                  - cell "AUTHENTICATION" [ref=f9e308]
+                  - cell "1" [ref=f9e309]
+                  - cell "Success" [ref=f9e310]
+                  - cell [ref=f9e315]:
+                    - button "Inspect" [ref=f9e316]
+                - row [ref=f9e317]:
+                  - cell "13 Aug 2026, 16:14:05" [ref=f9e318]
+                  - cell "Ravi Reception reception@vyoma.com" [ref=f9e319]:
+                    - generic [ref=f9e320]:
+                      - generic [ref=f9e321]: Ravi Reception
+                      - generic [ref=f9e322]: reception@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e323]
+                  - cell "AUTHENTICATION" [ref=f9e325]
+                  - cell "2" [ref=f9e326]
+                  - cell "Success" [ref=f9e327]
+                  - cell [ref=f9e332]:
+                    - button "Inspect" [ref=f9e333]
+                - row [ref=f9e334]:
+                  - cell "13 Aug 2026, 16:07:55" [ref=f9e335]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e336]:
+                    - generic [ref=f9e337]:
+                      - generic [ref=f9e338]: Vivek Admin
+                      - generic [ref=f9e339]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e340]
+                  - cell "AUTHENTICATION" [ref=f9e342]
+                  - cell "1" [ref=f9e343]
+                  - cell "Success" [ref=f9e344]
+                  - cell [ref=f9e349]:
+                    - button "Inspect" [ref=f9e350]
+                - row [ref=f9e351]:
+                  - cell "13 Aug 2026, 16:00:23" [ref=f9e352]
+                  - cell "Vivek Admin admin@vyoma.com" [ref=f9e353]:
+                    - generic [ref=f9e354]:
+                      - generic [ref=f9e355]: Vivek Admin
+                      - generic [ref=f9e356]: admin@vyoma.com
+                  - cell "LOGIN_SUCCESS" [ref=f9e357]
+                  - cell "AUTHENTICATION" [ref=f9e359]
+                  - cell "1" [ref=f9e360]
+                  - cell "Success" [ref=f9e361]
+                  - cell [ref=f9e366]:
+                    - button "Inspect" [ref=f9e367]
+            - generic [ref=f9e368]:
+              - generic [ref=f9e369]: Showing 1 to 11 of 11 audit records
+              - generic [ref=f9e370]:
+                - button [disabled] [ref=f9e371]
+                - generic [ref=f9e374]: Page 1 of 1
+                - button [disabled] [ref=f9e375]

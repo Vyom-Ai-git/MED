@@ -51,3 +51,22 @@ class PatientListResponse(BaseModel):
     page_size: int
 
     model_config = ConfigDict(from_attributes=True)
+
+class PatientLookupResponse(BaseModel):
+    id: int
+    patient_id: str
+    first_name: str
+    last_name: str
+    full_name: str
+    date_of_birth: date
+    gender: str
+    phone: str
+    email: Optional[str] = None
+    address: Optional[Dict[str, Any]] = None
+    communication_preference: str
+    consent_operational: bool
+    consent_promotional: bool
+    recent_orders_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+

@@ -1,0 +1,98 @@
+- generic [active] [ref=f8e1]:
+  - button "Open Next.js Dev Tools" [ref=f8e7] [cursor=pointer]
+  - alert [ref=f8e11]
+  - generic [ref=f8e12]:
+    - complementary [ref=f8e13]:
+      - generic [ref=f8e14]:
+        - generic [ref=f8e15]: L
+        - generic [ref=f8e16]:
+          - text: Vyoma LabOS
+          - generic [ref=f8e17]: Core Operations
+      - generic [ref=f8e18]:
+        - generic [ref=f8e19]:
+          - generic [ref=f8e20]: Core Registry
+          - navigation [ref=f8e21]:
+            - link "Dashboard" [ref=f8e22] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Patients" [ref=f8e26] [cursor=pointer]:
+              - /url: /patients
+            - link "Tests Catalog" [ref=f8e33] [cursor=pointer]:
+              - /url: /tests
+            - link "Orders Registry" [ref=f8e37] [cursor=pointer]:
+              - /url: /orders
+        - generic [ref=f8e41]:
+          - generic [ref=f8e42]: Lab Operations
+          - navigation [ref=f8e43]:
+            - link "Samples Tracker" [ref=f8e44] [cursor=pointer]:
+              - /url: /samples
+            - link "Technician Worklist" [ref=f8e50] [cursor=pointer]:
+              - /url: /worklist
+            - link "Verification Queue" [ref=f8e55] [cursor=pointer]:
+              - /url: /verification
+            - link "Reports Registry" [ref=f8e60] [cursor=pointer]:
+              - /url: /reports
+        - generic [ref=f8e65]:
+          - generic [ref=f8e66]: Future Modules
+          - navigation [ref=f8e67]:
+            - generic [ref=f8e68]:
+              - generic [ref=f8e69]: Appointments
+              - generic [ref=f8e73]: Soon
+            - generic [ref=f8e74]:
+              - generic [ref=f8e75]: Communication
+              - generic [ref=f8e79]: Soon
+            - generic [ref=f8e80]:
+              - generic [ref=f8e81]: Analytics
+              - generic [ref=f8e84]: Soon
+        - generic [ref=f8e85]:
+          - generic [ref=f8e86]: Administration
+          - navigation [ref=f8e87]:
+            - link "n8n Integration" [ref=f8e88] [cursor=pointer]:
+              - /url: /settings/integrations
+            - link "Users & Roles" [ref=f8e92] [cursor=pointer]:
+              - /url: /settings/users
+            - link "Audit Trail" [ref=f8e96] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=f8e102]:
+        - generic [ref=f8e103]:
+          - generic [ref=f8e104]: V
+          - generic [ref=f8e105]:
+            - generic [ref=f8e106]: Vivek Admin
+            - generic [ref=f8e107]: admin
+        - button "Sign Out" [ref=f8e108]
+    - generic [ref=f8e113]:
+      - banner [ref=f8e114]:
+        - generic [ref=f8e115]:
+          - generic [ref=f8e116]: LabOS
+          - generic [ref=f8e117]: reports
+        - generic [ref=f8e121]:
+          - generic [ref=f8e122]: Thu, Aug 13, 2026
+          - generic [ref=f8e131] [cursor=pointer]:
+            - generic [ref=f8e132]: Active Tenant
+            - generic [ref=f8e133]: Vyoma Diagnostics
+          - button [ref=f8e134]
+      - main [ref=f8e139]:
+        - generic [ref=f8e141]:
+          - generic [ref=f8e142]:
+            - generic [ref=f8e143]:
+              - heading "Reports Registry" [level=1] [ref=f8e144]
+              - paragraph [ref=f8e149]: Official diagnostic reports generated from verified laboratory results
+            - button "Refresh Registry" [ref=f8e150]
+          - generic [ref=f8e158]:
+            - textbox "Search by report number, order number, or patient..." [ref=f8e162]
+            - combobox [ref=f8e165]:
+              - option "All Statuses" [selected]
+              - option "Available"
+              - option "Generated"
+              - option "Superseded"
+          - table [ref=f8e167]:
+            - rowgroup [ref=f8e168]:
+              - row [ref=f8e169]:
+                - columnheader "Report Number" [ref=f8e170]
+                - columnheader "Order / Date" [ref=f8e171]
+                - columnheader "Patient" [ref=f8e172]
+                - columnheader "Tests Included" [ref=f8e173]
+                - columnheader "Status" [ref=f8e174]
+                - columnheader "Actions" [ref=f8e175]
+            - rowgroup [ref=f8e176]:
+              - row [ref=f8e177]:
+                - cell "No diagnostic reports generated yet." [ref=f8e178]

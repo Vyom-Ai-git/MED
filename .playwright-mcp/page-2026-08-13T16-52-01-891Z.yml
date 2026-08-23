@@ -1,0 +1,117 @@
+- generic [active] [ref=f7e1]:
+  - button "Open Next.js Dev Tools" [ref=f7e7] [cursor=pointer]
+  - alert [ref=f7e11]
+  - generic [ref=f7e12]:
+    - complementary [ref=f7e13]:
+      - generic [ref=f7e14]:
+        - generic [ref=f7e15]: L
+        - generic [ref=f7e16]:
+          - text: Vyoma LabOS
+          - generic [ref=f7e17]: Core Operations
+      - generic [ref=f7e18]:
+        - generic [ref=f7e19]:
+          - generic [ref=f7e20]: Core Registry
+          - navigation [ref=f7e21]:
+            - link "Dashboard" [ref=f7e22] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Patients" [ref=f7e26] [cursor=pointer]:
+              - /url: /patients
+            - link "Tests Catalog" [ref=f7e33] [cursor=pointer]:
+              - /url: /tests
+            - link "Orders Registry" [ref=f7e37] [cursor=pointer]:
+              - /url: /orders
+        - generic [ref=f7e41]:
+          - generic [ref=f7e42]: Lab Operations
+          - navigation [ref=f7e43]:
+            - link "Samples Tracker" [ref=f7e44] [cursor=pointer]:
+              - /url: /samples
+            - link "Technician Worklist" [ref=f7e50] [cursor=pointer]:
+              - /url: /worklist
+            - link "Verification Queue" [ref=f7e55] [cursor=pointer]:
+              - /url: /verification
+            - link "Reports Registry" [ref=f7e60] [cursor=pointer]:
+              - /url: /reports
+        - generic [ref=f7e65]:
+          - generic [ref=f7e66]: Future Modules
+          - navigation [ref=f7e67]:
+            - generic [ref=f7e68]:
+              - generic [ref=f7e69]: Appointments
+              - generic [ref=f7e73]: Soon
+            - generic [ref=f7e74]:
+              - generic [ref=f7e75]: Communication
+              - generic [ref=f7e79]: Soon
+            - generic [ref=f7e80]:
+              - generic [ref=f7e81]: Analytics
+              - generic [ref=f7e84]: Soon
+        - generic [ref=f7e85]:
+          - generic [ref=f7e86]: Administration
+          - navigation [ref=f7e87]:
+            - link "n8n Integration" [ref=f7e88] [cursor=pointer]:
+              - /url: /settings/integrations
+            - link "Users & Roles" [ref=f7e92] [cursor=pointer]:
+              - /url: /settings/users
+            - link "Audit Trail" [ref=f7e96] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=f7e102]:
+        - generic [ref=f7e103]:
+          - generic [ref=f7e104]: V
+          - generic [ref=f7e105]:
+            - generic [ref=f7e106]: Vivek Admin
+            - generic [ref=f7e107]: admin
+        - button "Sign Out" [ref=f7e108]
+    - generic [ref=f7e113]:
+      - banner [ref=f7e114]:
+        - generic [ref=f7e115]:
+          - generic [ref=f7e116]: LabOS
+          - generic [ref=f7e117]: verification
+        - generic [ref=f7e121]:
+          - generic [ref=f7e122]: Thu, Aug 13, 2026
+          - generic [ref=f7e131] [cursor=pointer]:
+            - generic [ref=f7e132]: Active Tenant
+            - generic [ref=f7e133]: Vyoma Diagnostics
+          - button [ref=f7e134]
+      - main [ref=f7e139]:
+        - generic [ref=f7e141]:
+          - generic [ref=f7e142]:
+            - generic [ref=f7e143]:
+              - heading "Result Verification Queue" [level=1] [ref=f7e144]
+              - paragraph [ref=f7e148]: Authorized clinical reviewer console — inspect and approve laboratory results before report generation
+            - button "Refresh Queue" [ref=f7e149]
+          - generic [ref=f7e155]:
+            - generic [ref=f7e158] [cursor=pointer]:
+              - generic [ref=f7e159]: Pending Review
+              - generic [ref=f7e164]: "0"
+            - generic [ref=f7e167] [cursor=pointer]:
+              - generic [ref=f7e168]: Critical Results
+              - generic [ref=f7e172]: "0"
+            - generic [ref=f7e175] [cursor=pointer]:
+              - generic [ref=f7e176]: Correction Required
+              - generic [ref=f7e181]: "0"
+            - generic [ref=f7e184] [cursor=pointer]:
+              - generic [ref=f7e185]: Verified Today
+              - generic [ref=f7e190]: "0"
+          - generic [ref=f7e193]:
+            - textbox "Search patient, sample ID, or order number..." [ref=f7e197]
+            - generic [ref=f7e198]:
+              - combobox [ref=f7e201]:
+                - option "All Statuses" [selected]
+                - option "Entered / Pending"
+                - option "Correction Req."
+                - option "Verified"
+              - combobox [ref=f7e204]:
+                - option "All Priorities" [selected]
+                - option "Normal"
+                - option "Urgent"
+              - button "Critical Only" [ref=f7e205]
+          - table [ref=f7e209]:
+            - rowgroup [ref=f7e210]:
+              - row [ref=f7e211]:
+                - columnheader "Priority" [ref=f7e212]
+                - columnheader "Specimen / Order" [ref=f7e213]
+                - columnheader "Patient" [ref=f7e214]
+                - columnheader "Tests" [ref=f7e215]
+                - columnheader "Flags & Status" [ref=f7e216]
+                - columnheader "Action" [ref=f7e217]
+            - rowgroup [ref=f7e218]:
+              - row [ref=f7e219]:
+                - cell "No laboratory results currently awaiting verification." [ref=f7e220]

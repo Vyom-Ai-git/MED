@@ -258,3 +258,120 @@ def m2m_download_report_pdf(
             "X-Report-Checksum": report.checksum,
         },
     )
+
+
+@router.get("/reports/{id}/metadata", response_model=dict)
+def m2m_get_report_metadata(
+    id: int,
+    db: Session = Depends(get_db),
+    x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
+):
+    """
+    Machine-to-Machine (M2M) endpoint for n8n/AI orchestrators to fetch report metadata.
+    """
+    configured_key = settings.N8N_INTEGRATION_KEY
+    if not configured_key or not x_integration_key or x_integration_key != configured_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing M2M integration key",
+        )
+
+    report = db.query(Report).filter(Report.id == id).first()
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    order = report.order
+    patient = report.patient
+
+    verified_by = None
+    if order and getattr(order, "verified_by", None):
+        from app.models.user import User as UserModel
+        p_user = db.query(UserModel).filter(UserModel.id == getattr(order, "verified_by")).first()
+        if p_user:
+            verified_by = p_user.name
+
+
+    return {
+        "id": report.id,
+        "report_number": report.report_number,
+        "organization_id": report.organization_id,
+        "branch_id": report.branch_id,
+        "order_id": report.order_id,
+        "order_number": order.order_number if order else "",
+        "patient_id": report.patient_id,
+        "patient_mrn": patient.patient_id if patient else "",
+        "patient_name": f"{patient.first_name} {patient.last_name}" if patient else "",
+        "patient_phone": patient.phone if patient else "",
+        "status": report.status,
+        "version": report.version,
+        "file_name": report.file_name,
+        "file_size": report.file_size,
+        "mime_type": report.mime_type,
+        "checksum": report.checksum,
+        "page_count": getattr(report, "page_count", 1) or 1,
+        "generated_at": report.generated_at,
+        "verification_status": "Verified" if (order and order.status == "Verified") else report.status,
+        "verified_by_pathologist": verified_by,
+        "download_url": f"/api/v1/integrations/reports/{report.id}/download",
+    }
+
+
+@router.get("/reports/{id}/results", response_model=dict)
+def m2m_get_verified_report_results(
+    id: int,
+    db: Session = Depends(get_db),
+    x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
+):
+    """
+    Machine-to-Machine (M2M) endpoint for n8n/AI orchestrators to fetch verified lab test results.
+    """
+    configured_key = settings.N8N_INTEGRATION_KEY
+    if not configured_key or not x_integration_key or x_integration_key != configured_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing M2M integration key",
+        )
+
+    report = db.query(Report).filter(Report.id == id).first()
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    order = report.order
+    patient = report.patient
+
+    from app.models.sample import Result, Sample
+    results = []
+    if order:
+        samples = db.query(Sample).filter(Sample.order_id == order.id).all()
+        for sample in samples:
+            test_results = db.query(Result).filter(Result.sample_id == sample.id).all()
+            for tr in test_results:
+                param_name = tr.parameter.name if tr.parameter else "Parameter"
+                test_name = tr.test.name if tr.test else "Diagnostic Test"
+                val = tr.raw_value or (str(tr.numeric_value) if tr.numeric_value is not None else tr.text_value or "")
+                ref_range = f"{tr.reference_low} - {tr.reference_high}" if (tr.reference_low is not None and tr.reference_high is not None) else None
+                
+                results.append({
+                    "test_code": f"TST-{tr.id:04d}",
+                    "test_name": test_name,
+                    "parameter_name": param_name,
+                    "result_value": val,
+                    "unit": tr.unit,
+                    "reference_range": ref_range,
+                    "flag": tr.abnormal_flag or "Normal",
+                    "status": "Verified" if order and order.status == "Verified" else "Completed",
+                })
+
+
+    return {
+        "report_id": report.id,
+        "report_number": report.report_number,
+        "order_id": report.order_id,
+        "order_number": order.order_number if order else "",
+        "patient_id": report.patient_id,
+        "patient_name": f"{patient.first_name} {patient.last_name}" if patient else "",
+        "patient_mrn": patient.patient_id if patient else "",
+        "overall_status": order.status if order else "Verified",
+        "results": results,
+    }
+

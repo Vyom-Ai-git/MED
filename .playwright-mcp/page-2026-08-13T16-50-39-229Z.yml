@@ -1,0 +1,160 @@
+- generic [active] [ref=f3e1]:
+  - button "Open Next.js Dev Tools" [ref=f3e7] [cursor=pointer]
+  - alert [ref=f3e11]
+  - generic [ref=f3e12]:
+    - complementary [ref=f3e13]:
+      - generic [ref=f3e14]:
+        - generic [ref=f3e15]: L
+        - generic [ref=f3e16]:
+          - text: Vyoma LabOS
+          - generic [ref=f3e17]: Core Operations
+      - generic [ref=f3e18]:
+        - generic [ref=f3e19]:
+          - generic [ref=f3e20]: Core Registry
+          - navigation [ref=f3e21]:
+            - link "Dashboard" [ref=f3e22] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Patients" [ref=f3e26] [cursor=pointer]:
+              - /url: /patients
+            - link "Tests Catalog" [ref=f3e33] [cursor=pointer]:
+              - /url: /tests
+            - link "Orders Registry" [ref=f3e37] [cursor=pointer]:
+              - /url: /orders
+        - generic [ref=f3e41]:
+          - generic [ref=f3e42]: Lab Operations
+          - navigation [ref=f3e43]:
+            - link "Samples Tracker" [ref=f3e44] [cursor=pointer]:
+              - /url: /samples
+            - link "Technician Worklist" [ref=f3e50] [cursor=pointer]:
+              - /url: /worklist
+            - link "Verification Queue" [ref=f3e55] [cursor=pointer]:
+              - /url: /verification
+            - link "Reports Registry" [ref=f3e60] [cursor=pointer]:
+              - /url: /reports
+        - generic [ref=f3e65]:
+          - generic [ref=f3e66]: Future Modules
+          - navigation [ref=f3e67]:
+            - generic [ref=f3e68]:
+              - generic [ref=f3e69]: Appointments
+              - generic [ref=f3e73]: Soon
+            - generic [ref=f3e74]:
+              - generic [ref=f3e75]: Communication
+              - generic [ref=f3e79]: Soon
+            - generic [ref=f3e80]:
+              - generic [ref=f3e81]: Analytics
+              - generic [ref=f3e84]: Soon
+        - generic [ref=f3e85]:
+          - generic [ref=f3e86]: Administration
+          - navigation [ref=f3e87]:
+            - link "n8n Integration" [ref=f3e88] [cursor=pointer]:
+              - /url: /settings/integrations
+            - link "Users & Roles" [ref=f3e92] [cursor=pointer]:
+              - /url: /settings/users
+            - link "Audit Trail" [ref=f3e96] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=f3e102]:
+        - generic [ref=f3e103]:
+          - generic [ref=f3e104]: V
+          - generic [ref=f3e105]:
+            - generic [ref=f3e106]: Vivek Admin
+            - generic [ref=f3e107]: admin
+        - button "Sign Out" [ref=f3e108]
+    - generic [ref=f3e113]:
+      - banner [ref=f3e114]:
+        - generic [ref=f3e115]:
+          - generic [ref=f3e116]: LabOS
+          - generic [ref=f3e117]: orders
+        - generic [ref=f3e121]:
+          - generic [ref=f3e122]: Thu, Aug 13, 2026
+          - generic [ref=f3e131] [cursor=pointer]:
+            - generic [ref=f3e132]: Active Tenant
+            - generic [ref=f3e133]: Vyoma Diagnostics
+          - button [ref=f3e134]
+      - main [ref=f3e139]:
+        - generic [ref=f3e141]:
+          - generic [ref=f3e142]:
+            - generic [ref=f3e143]:
+              - heading "Orders" [level=1] [ref=f3e144]
+              - paragraph [ref=f3e145]: Manage laboratory test orders — 3 total orders
+            - button "New Order" [ref=f3e146]
+          - generic [ref=f3e151]:
+            - textbox "Search order, patient, phone..." [ref=f3e156]
+            - combobox [ref=f3e160]:
+              - option "All Statuses" [selected]
+              - option "Pending"
+              - option "Sample Collected"
+              - option "Processing"
+              - option "Result Entered"
+              - option "Verified"
+              - option "Published"
+              - option "Cancelled"
+            - combobox [ref=f3e161]:
+              - option "All Payments" [selected]
+              - option "Pending"
+              - option "Paid"
+              - option "Partial"
+              - option "Refunded"
+            - button [ref=f3e162]
+          - table [ref=f3e171]:
+            - rowgroup [ref=f3e172]:
+              - row [ref=f3e173]:
+                - columnheader "Order Number" [ref=f3e174]
+                - columnheader "Patient" [ref=f3e175]
+                - columnheader "Tests" [ref=f3e176]
+                - columnheader "Date" [ref=f3e177]
+                - columnheader "Amount" [ref=f3e178]
+                - columnheader "Payment" [ref=f3e179]
+                - columnheader "Status" [ref=f3e180]
+                - columnheader "Created By" [ref=f3e181]
+                - columnheader "Actions" [ref=f3e182]
+            - rowgroup [ref=f3e183]:
+              - row [ref=f3e184]:
+                - cell [ref=f3e185]:
+                  - button "ORD-2026-00003" [ref=f3e186]
+                - cell [ref=f3e187]:
+                  - generic [ref=f3e188]:
+                    - paragraph [ref=f3e189]: Jane Doe
+                    - paragraph [ref=f3e190]: PAT-2026-0001
+                - cell "CBC" [ref=f3e191]
+                - cell "13 Aug 2026" [ref=f3e194]
+                - cell "300.00" [ref=f3e199]
+                - cell "Pending" [ref=f3e204]
+                - cell "Cancelled" [ref=f3e206]
+                - cell "Vivek Admin" [ref=f3e208]
+                - cell [ref=f3e214]:
+                  - button "View" [ref=f3e216]
+              - row [ref=f3e220]:
+                - cell [ref=f3e221]:
+                  - button "ORD-2026-00002" [ref=f3e222]
+                - cell [ref=f3e223]:
+                  - generic [ref=f3e224]:
+                    - paragraph [ref=f3e225]: John Smith
+                    - paragraph [ref=f3e226]: PAT-2026-0002
+                - cell "LIPID" [ref=f3e227]
+                - cell "13 Aug 2026" [ref=f3e230]
+                - cell "650.00" [ref=f3e235]
+                - cell "Pending" [ref=f3e240]
+                - cell "Verified" [ref=f3e242]
+                - cell "Vivek Admin" [ref=f3e244]
+                - cell [ref=f3e250]:
+                  - button "View" [ref=f3e252]
+              - row [ref=f3e256]:
+                - cell [ref=f3e257]:
+                  - button "ORD-2026-00001" [ref=f3e258]
+                - cell [ref=f3e259]:
+                  - generic [ref=f3e260]:
+                    - paragraph [ref=f3e261]: Jane Doe
+                    - paragraph [ref=f3e262]: PAT-2026-0001
+                - cell "CBC HBA1C" [ref=f3e263]:
+                  - generic [ref=f3e264]:
+                    - generic [ref=f3e265]: CBC
+                    - generic [ref=f3e266]: HBA1C
+                - cell "13 Aug 2026" [ref=f3e267]
+                - cell "800.00" [ref=f3e272]
+                - cell "Paid" [ref=f3e277]
+                - cell "Pending" [ref=f3e279]
+                - cell "Vivek Admin" [ref=f3e281]
+                - cell [ref=f3e287]:
+                  - generic [ref=f3e288]:
+                    - button "View" [ref=f3e289]
+                    - button "Cancel" [ref=f3e293]

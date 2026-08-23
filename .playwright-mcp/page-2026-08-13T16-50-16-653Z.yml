@@ -1,0 +1,155 @@
+- generic [active] [ref=f2e1]:
+  - button "Open Next.js Dev Tools" [ref=f2e7] [cursor=pointer]
+  - alert [ref=f2e11]
+  - generic [ref=f2e12]:
+    - complementary [ref=f2e13]:
+      - generic [ref=f2e14]:
+        - generic [ref=f2e15]: L
+        - generic [ref=f2e16]:
+          - text: Vyoma LabOS
+          - generic [ref=f2e17]: Core Operations
+      - generic [ref=f2e18]:
+        - generic [ref=f2e19]:
+          - generic [ref=f2e20]: Core Registry
+          - navigation [ref=f2e21]:
+            - link "Dashboard" [ref=f2e22] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Patients" [ref=f2e26] [cursor=pointer]:
+              - /url: /patients
+            - link "Tests Catalog" [ref=f2e33] [cursor=pointer]:
+              - /url: /tests
+            - link "Orders Registry" [ref=f2e37] [cursor=pointer]:
+              - /url: /orders
+        - generic [ref=f2e41]:
+          - generic [ref=f2e42]: Lab Operations
+          - navigation [ref=f2e43]:
+            - link "Samples Tracker" [ref=f2e44] [cursor=pointer]:
+              - /url: /samples
+            - link "Technician Worklist" [ref=f2e50] [cursor=pointer]:
+              - /url: /worklist
+            - link "Verification Queue" [ref=f2e55] [cursor=pointer]:
+              - /url: /verification
+            - link "Reports Registry" [ref=f2e60] [cursor=pointer]:
+              - /url: /reports
+        - generic [ref=f2e65]:
+          - generic [ref=f2e66]: Future Modules
+          - navigation [ref=f2e67]:
+            - generic [ref=f2e68]:
+              - generic [ref=f2e69]: Appointments
+              - generic [ref=f2e73]: Soon
+            - generic [ref=f2e74]:
+              - generic [ref=f2e75]: Communication
+              - generic [ref=f2e79]: Soon
+            - generic [ref=f2e80]:
+              - generic [ref=f2e81]: Analytics
+              - generic [ref=f2e84]: Soon
+        - generic [ref=f2e85]:
+          - generic [ref=f2e86]: Administration
+          - navigation [ref=f2e87]:
+            - link "n8n Integration" [ref=f2e88] [cursor=pointer]:
+              - /url: /settings/integrations
+            - link "Users & Roles" [ref=f2e92] [cursor=pointer]:
+              - /url: /settings/users
+            - link "Audit Trail" [ref=f2e96] [cursor=pointer]:
+              - /url: /audit
+      - generic [ref=f2e102]:
+        - generic [ref=f2e103]:
+          - generic [ref=f2e104]: V
+          - generic [ref=f2e105]:
+            - generic [ref=f2e106]: Vivek Admin
+            - generic [ref=f2e107]: admin
+        - button "Sign Out" [ref=f2e108]
+    - generic [ref=f2e113]:
+      - banner [ref=f2e114]:
+        - generic [ref=f2e115]:
+          - generic [ref=f2e116]: LabOS
+          - generic [ref=f2e117]: patients
+        - generic [ref=f2e121]:
+          - generic [ref=f2e122]: Thu, Aug 13, 2026
+          - generic [ref=f2e131] [cursor=pointer]:
+            - generic [ref=f2e132]: Active Tenant
+            - generic [ref=f2e133]: Vyoma Diagnostics
+          - button [ref=f2e134]
+      - main [ref=f2e139]:
+        - generic [ref=f2e141]:
+          - generic [ref=f2e142]:
+            - generic [ref=f2e143]:
+              - heading "Patient Registry" [level=1] [ref=f2e144]
+              - paragraph [ref=f2e145]: Browse and manage registered patients, retrieve historical lab profiles, or enroll new entries.
+            - button "Register Patient" [ref=f2e146]
+          - generic [ref=f2e152]:
+            - textbox "Search by name, patient ID, phone..." [ref=f2e157]
+            - table [ref=f2e159]:
+              - rowgroup [ref=f2e160]:
+                - row [ref=f2e161]:
+                  - columnheader "Patient ID" [ref=f2e162]
+                  - columnheader "Patient Name" [ref=f2e163]
+                  - columnheader "Demographics" [ref=f2e164]
+                  - columnheader "Phone" [ref=f2e165]
+                  - columnheader "Referring Provider" [ref=f2e166]
+                  - columnheader "Consent" [ref=f2e167]
+                  - columnheader "Actions" [ref=f2e168]
+              - rowgroup [ref=f2e169]:
+                - row [ref=f2e170]:
+                  - cell "PAT-20260813-0003" [ref=f2e171]
+                  - cell "Abhiram Krishna kuttanpilla@gmail.com" [ref=f2e172]:
+                    - generic [ref=f2e173]:
+                      - generic [ref=f2e174]: Abhiram Krishna
+                      - generic [ref=f2e175]: kuttanpilla@gmail.com
+                  - cell "0 yrs • male" [ref=f2e176]:
+                    - generic [ref=f2e177]:
+                      - generic [ref=f2e178]: 0 yrs
+                      - generic [ref=f2e179]: •
+                      - generic [ref=f2e180]: male
+                  - cell "934249283" [ref=f2e181]
+                  - cell "Sunnilal" [ref=f2e185]
+                  - cell [ref=f2e186]:
+                    - generic [ref=f2e187]:
+                      - generic [ref=f2e188]: Operational
+                      - generic [ref=f2e192]: Promotional
+                  - cell [ref=f2e196]:
+                    - generic [ref=f2e197]:
+                      - button "View Profile & History" [ref=f2e198]
+                      - button "Edit Demographics" [ref=f2e202]
+                - row [ref=f2e205]:
+                  - cell "PAT-2026-0002" [ref=f2e206]
+                  - cell "John Smith john.smith@example.com" [ref=f2e207]:
+                    - generic [ref=f2e208]:
+                      - generic [ref=f2e209]: John Smith
+                      - generic [ref=f2e210]: john.smith@example.com
+                  - cell "40 yrs • male" [ref=f2e211]:
+                    - generic [ref=f2e212]:
+                      - generic [ref=f2e213]: 40 yrs
+                      - generic [ref=f2e214]: •
+                      - generic [ref=f2e215]: male
+                  - cell "+91 97777 66666" [ref=f2e216]
+                  - cell "Self" [ref=f2e220]
+                  - cell [ref=f2e221]:
+                    - generic [ref=f2e222]:
+                      - generic [ref=f2e223]: Operational
+                      - generic [ref=f2e227]: Promotional
+                  - cell [ref=f2e231]:
+                    - generic [ref=f2e232]:
+                      - button "View Profile & History" [ref=f2e233]
+                      - button "Edit Demographics" [ref=f2e237]
+                - row [ref=f2e240]:
+                  - cell "PAT-2026-0001" [ref=f2e241]
+                  - cell "Jane Doe jane.doe@example.com" [ref=f2e242]:
+                    - generic [ref=f2e243]:
+                      - generic [ref=f2e244]: Jane Doe
+                      - generic [ref=f2e245]: jane.doe@example.com
+                  - cell "36 yrs • female" [ref=f2e246]:
+                    - generic [ref=f2e247]:
+                      - generic [ref=f2e248]: 36 yrs
+                      - generic [ref=f2e249]: •
+                      - generic [ref=f2e250]: female
+                  - cell "+91 98888 77777" [ref=f2e251]
+                  - cell "Dr. Amit Shah" [ref=f2e255]
+                  - cell [ref=f2e256]:
+                    - generic [ref=f2e257]:
+                      - generic [ref=f2e258]: Operational
+                      - generic [ref=f2e262]: Promotional
+                  - cell [ref=f2e266]:
+                    - generic [ref=f2e267]:
+                      - button "View Profile & History" [ref=f2e268]
+                      - button "Edit Demographics" [ref=f2e272]
