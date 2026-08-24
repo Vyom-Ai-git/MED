@@ -1,0 +1,872 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Vyoma LabOS Integration API",
+    "version": "1.0.0",
+    "description": "Official LabOS API contract for third-party integrations. All timestamps in ISO 8601 format. All IDs are UUIDs.",
+    "contact": {
+      "name": "Vyoma Labs Integration Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local Development"
+    },
+    {
+      "url": "https://api.vyoma-labs.com",
+      "description": "Production"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "IntegrationKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Integration-Key",
+        "description": "Integration key provided during onboarding"
+      }
+    },
+    "schemas": {
+      "PatientInfo": {
+        "type": "object",
+        "required": ["patient_id", "name", "phone", "email"],
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique patient identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Patient's full name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Patient's contact phone number"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Patient's email address"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "gender": {
+            "type": "string",
+            "enum": ["M", "F", "O"],
+            "nullable": true
+          }
+        }
+      },
+      "ReportMetadata": {
+        "type": "object",
+        "required": ["report_id", "patient_id", "created_at", "report_type", "status"],
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "report_type": {
+            "type": "string",
+            "description": "Type of report (e.g., lab_report, pathology_report)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "pending_verification", "verified", "released"]
+          },
+          "verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "verified_by": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of pathologist who verified"
+          }
+        }
+      },
+      "ReportResults": {
+        "type": "object",
+        "required": ["report_id", "tests"],
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["test_name", "result_value", "unit"],
+              "properties": {
+                "test_name": {
+                  "type": "string"
+                },
+                "result_value": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "reference_range": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "flag": {
+                  "type": "string",
+                  "enum": ["normal", "high", "low", "critical"],
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "SecureLink": {
+        "type": "object",
+        "required": ["token", "expires_at", "url"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Secure single-use token"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Full URL to patient-facing report"
+          }
+        }
+      },
+      "TestCatalog": {
+        "type": "object",
+        "required": ["tests"],
+        "properties": {
+          "tests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["test_id", "name", "price"],
+              "properties": {
+                "test_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "price": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "duration_hours": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "BranchAvailability": {
+        "type": "object",
+        "required": ["branches"],
+        "properties": {
+          "branches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["branch_id", "name", "location", "is_open"],
+              "properties": {
+                "branch_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "location": {
+                  "type": "object",
+                  "properties": {
+                    "city": {"type": "string"},
+                    "address": {"type": "string"}
+                  }
+                },
+                "is_open": {
+                  "type": "boolean"
+                },
+                "working_hours": {
+                  "type": "object",
+                  "properties": {
+                    "open_at": {"type": "string", "format": "time"},
+                    "close_at": {"type": "string", "format": "time"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DoctorAvailability": {
+        "type": "object",
+        "required": ["doctor_id", "name", "available_slots"],
+        "properties": {
+          "doctor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "specialization": {
+            "type": "string"
+          },
+          "available_slots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {"type": "string", "format": "date"},
+                "start_time": {"type": "string", "format": "time"},
+                "end_time": {"type": "string", "format": "time"}
+              }
+            }
+          }
+        }
+      },
+      "DoctorAppointmentRequest": {
+        "type": "object",
+        "required": ["doctor_id", "patient_id", "appointment_date", "appointment_time"],
+        "properties": {
+          "doctor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "appointment_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "appointment_time": {
+            "type": "string",
+            "format": "time"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "DoctorAppointmentResponse": {
+        "type": "object",
+        "required": ["appointment_id", "status"],
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["confirmed", "pending", "cancelled"]
+          },
+          "confirmation_token": {
+            "type": "string"
+          }
+        }
+      },
+      "LabBookingRequest": {
+        "type": "object",
+        "required": ["patient_id", "test_ids", "branch_id"],
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "test_ids": {
+            "type": "array",
+            "items": {"type": "string", "format": "uuid"},
+            "minItems": 1
+          },
+          "branch_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "preferred_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "preferred_time": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "LabBookingResponse": {
+        "type": "object",
+        "required": ["booking_id", "status"],
+        "properties": {
+          "booking_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["confirmed", "pending", "cancelled"]
+          },
+          "appointment_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "appointment_time": {
+            "type": "string",
+            "format": "time"
+          },
+          "confirmation_token": {
+            "type": "string"
+          }
+        }
+      },
+      "CustomerCareHandoffRequest": {
+        "type": "object",
+        "required": ["patient_id", "category", "message"],
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["billing", "appointment", "report_query", "general"],
+            "description": "Support ticket category"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "contact_number": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CustomerCareHandoffResponse": {
+        "type": "object",
+        "required": ["ticket_id", "status"],
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["created", "assigned", "in_progress", "resolved"]
+          },
+          "assigned_to": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error", "message"],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {"IntegrationKey": []}
+  ],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "tags": ["Health"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is healthy"
+          }
+        }
+      }
+    },
+    "/api/v1/integrations/n8n/test": {
+      "post": {
+        "summary": "Test n8n webhook integration",
+        "tags": ["Integration Management"],
+        "responses": {
+          "200": {
+            "description": "Webhook integration test successful"
+          },
+          "400": {
+            "description": "Invalid webhook URL"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/integrations": {
+      "get": {
+        "summary": "Get integration metadata",
+        "tags": ["Integration Management"],
+        "responses": {
+          "200": {
+            "description": "Integration metadata retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/integrations/logs": {
+      "get": {
+        "summary": "Get integration event logs",
+        "tags": ["Integration Management"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {"type": "integer", "default": 50}
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {"type": "integer", "default": 0}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Integration logs retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{id}/metadata": {
+      "get": {
+        "summary": "Get report metadata",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report metadata retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Report not found"
+          }
+        }
+      }
+    },
+    "/api/v1/integrations/reports/{id}/metadata": {
+      "get": {
+        "summary": "Get report metadata (integration endpoint)",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report metadata retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Report not found"
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{id}/results": {
+      "get": {
+        "summary": "Get verified report results",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report results retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Report not found"
+          },
+          "409": {
+            "description": "Report not yet verified"
+          }
+        }
+      }
+    },
+    "/api/v1/integrations/reports/{id}/results": {
+      "get": {
+        "summary": "Get verified report results (integration endpoint)",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report results retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Report not found"
+          },
+          "409": {
+            "description": "Report not yet verified"
+          }
+        }
+      }
+    },
+    "/api/v1/patients/lookup": {
+      "get": {
+        "summary": "Patient contact lookup",
+        "tags": ["Patients"],
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "query",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient information retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Patient not found"
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{id}/secure-link": {
+      "post": {
+        "summary": "Generate secure patient-facing report link",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["patient_id"],
+                "properties": {
+                  "patient_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expires_in_hours": {
+                    "type": "integer",
+                    "default": 24
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Secure link generated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Report not found"
+          }
+        }
+      }
+    },
+    "/api/v1/public/reports/access/{token}": {
+      "get": {
+        "summary": "Access report using secure token",
+        "tags": ["Reports"],
+        "security": [],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["json", "pdf"],
+              "default": "pdf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report accessed successfully"
+          },
+          "401": {
+            "description": "Invalid or expired token"
+          },
+          "404": {
+            "description": "Report not found"
+          }
+        }
+      }
+    },
+    "/api/v1/tests/catalog": {
+      "get": {
+        "summary": "Get available test catalog",
+        "tags": ["Tests"],
+        "responses": {
+          "200": {
+            "description": "Test catalog retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/branches/availability": {
+      "get": {
+        "summary": "Get branch/location availability",
+        "tags": ["Branches"],
+        "parameters": [
+          {
+            "name": "city",
+            "in": "query",
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Branch availability retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/doctors/{id}/availability": {
+      "get": {
+        "summary": "Get doctor availability",
+        "tags": ["Doctors"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "schema": {"type": "string", "format": "date"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Doctor availability retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Doctor not found"
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/doctor": {
+      "post": {
+        "summary": "Create doctor appointment booking",
+        "tags": ["Bookings"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/DoctorAppointmentRequest"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Doctor appointment booking created"
+          },
+          "400": {
+            "description": "Invalid booking request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "409": {
+            "description": "Slot already booked"
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/lab": {
+      "post": {
+        "summary": "Create lab booking",
+        "tags": ["Bookings"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/LabBookingRequest"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lab booking created"
+          },
+          "400": {
+            "description": "Invalid booking request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "409": {
+            "description": "Slot unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/customer-care/handoff": {
+      "post": {
+        "summary": "Create customer care support ticket",
+        "tags": ["Customer Care"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/CustomerCareHandoffRequest"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Support ticket created"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get customer care tickets",
+        "tags": ["Customer Care"],
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "query",
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer care tickets retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    }
+  }
+}

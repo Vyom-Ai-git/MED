@@ -1,0 +1,10 @@
+Flask>=3.0.0,<4
+pymongo>=4.7,<5
+mongomock>=4.3,<5
+python-dotenv>=1.0,<2
+requests>=2.31,<3
+pypdf>=5.0,<6
+google-genai>=0.7,<1
+pydantic>=2.7,<3
+pytest>=8.0,<9
+gunicorn>=22,<23
