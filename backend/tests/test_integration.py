@@ -209,7 +209,7 @@ def test_m2m_report_download_security(client: TestClient, db: Session):
     order_id = env["order"].id
 
     # Set M2M integration key in settings
-    with patch.object(settings, "N8N_INTEGRATION_KEY", "secret_m2m_key_999"):
+    with patch.object(settings, "LABOS_API_KEY", "secret_m2m_key_999"):
         # Generate report
         report = report_service.generate_report_for_order(db, order_id=order_id, org_id=org_id)
 
@@ -239,7 +239,7 @@ def test_m2m_report_download_security(client: TestClient, db: Session):
             AuditLog.entity_id == str(report.id)
         ).first()
         assert audit is not None
-        assert audit.metadata_json.get("source") == "m2m_n8n_integration"
+        assert audit.metadata_json.get("source") == "m2m_native_workflow"
 
 
 def test_report_available_e2e_integration_flow(client: TestClient, db: Session):
@@ -259,15 +259,15 @@ def test_report_available_e2e_integration_flow(client: TestClient, db: Session):
     mock_db = MagicMock(wraps=db)
     mock_db.close = MagicMock()
 
-    with patch.object(settings, "N8N_WEBHOOK_URL", "https://n8n.test/webhook/report-available"), \
-         patch.object(settings, "N8N_WEBHOOK_SECRET", "test_secret_123"), \
+    with patch.object(settings, "FLASK_WORKFLOW_URL", "https://flask.test/webhook/report-available"), \
+         patch.object(settings, "FLASK_WORKFLOW_SECRET", "test_secret_123"), \
          patch("app.services.integration.SessionLocal", return_value=mock_db), \
          patch("app.services.integration.httpx.Client", return_value=mock_client_ctx):
 
         # Generate report
         report = report_service.generate_report_for_order(db, order_id=order_id, org_id=org_id)
 
-        # Verify n8n webhook POST was called
+        # Verify Flask workflow webhook POST was called
         assert mock_client_instance.post.called is True
 
         # Verify IntegrationDelivery record exists in DB
@@ -288,10 +288,10 @@ def test_report_available_e2e_integration_flow(client: TestClient, db: Session):
         assert audit is not None
 
 
-def test_n8n_outage_resilience(client: TestClient, db: Session):
+def test_flask_workflow_outage_resilience(client: TestClient, db: Session):
     """
-    Test n8n Outage Resilience:
-    If n8n is offline (HTTP 500 or ConnectionError), LabOS MUST still generate report,
+    Test Flask workflow outage resilience:
+    If the Flask workflow is offline (HTTP 500 or ConnectionError), LabOS MUST still generate report,
     mark report Available, record IntegrationDelivery as Failed, and allow downloading report.
     """
     env = setup_test_environment(db)
@@ -302,7 +302,7 @@ def test_n8n_outage_resilience(client: TestClient, db: Session):
     mock_client_instance = MagicMock()
     mock_response = MagicMock()
     mock_response.status_code = 500
-    mock_response.text = '{"error":"Internal n8n outage"}'
+    mock_response.text = '{"error":"Internal Flask workflow outage"}'
     mock_client_instance.post.return_value = mock_response
     mock_client_ctx = MagicMock()
     mock_client_ctx.__enter__.return_value = mock_client_instance
@@ -310,8 +310,8 @@ def test_n8n_outage_resilience(client: TestClient, db: Session):
     mock_db = MagicMock(wraps=db)
     mock_db.close = MagicMock()
 
-    with patch.object(settings, "N8N_WEBHOOK_URL", "https://n8n.test/webhook/down"), \
-         patch.object(settings, "N8N_WEBHOOK_SECRET", "test_secret_123"), \
+    with patch.object(settings, "FLASK_WORKFLOW_URL", "https://flask.test/webhook/down"), \
+         patch.object(settings, "FLASK_WORKFLOW_SECRET", "test_secret_123"), \
          patch("app.services.integration.SessionLocal", return_value=mock_db), \
          patch("app.services.integration.httpx.Client", return_value=mock_client_ctx):
 
@@ -354,7 +354,7 @@ def test_idempotency_duplicate_event_handling(client: TestClient, db: Session):
     mock_client_ctx = MagicMock()
     mock_client_ctx.__enter__.return_value = mock_client_instance
 
-    with patch.object(settings, "N8N_WEBHOOK_URL", "https://n8n.test/webhook"), \
+    with patch.object(settings, "FLASK_WORKFLOW_URL", "https://flask.test/webhook"), \
          patch("app.services.integration.httpx.Client", return_value=mock_client_ctx):
 
         event_id = "evt_fixed_idempotency_test"
@@ -387,7 +387,7 @@ def test_admin_manual_retry(client: TestClient, db: Session):
         organization_id=org_id,
         event_id="evt_failed_001",
         event_type="report.available",
-        destination="https://n8n.test/webhook",
+        destination="https://flask.test/webhook",
         status="Failed",
         attempts=3,
         response_status=500,
@@ -405,7 +405,7 @@ def test_admin_manual_retry(client: TestClient, db: Session):
     mock_client_ctx = MagicMock()
     mock_client_ctx.__enter__.return_value = mock_client_instance
 
-    with patch.object(settings, "N8N_WEBHOOK_URL", "https://n8n.test/webhook"), \
+    with patch.object(settings, "FLASK_WORKFLOW_URL", "https://flask.test/webhook"), \
          patch("app.services.integration.httpx.Client", return_value=mock_client_ctx):
 
         # Trigger manual retry via Admin endpoint
@@ -435,7 +435,7 @@ def test_rbac_integration_access(client: TestClient, db: Session):
         res = client.get("/api/v1/integrations", headers={"Authorization": f"Bearer {token}"})
         assert res.status_code == 403, f"Expected 403 for role {t_name}, got {res.status_code}"
 
-        res_test = client.post("/api/v1/integrations/n8n/test", headers={"Authorization": f"Bearer {token}"})
+        res_test = client.post("/api/v1/integrations/test", headers={"Authorization": f"Bearer {token}"})
         assert res_test.status_code == 403
 
         res_logs = client.get("/api/v1/integrations/logs", headers={"Authorization": f"Bearer {token}"})
@@ -470,7 +470,7 @@ def test_tenant_isolation_integration_logs(client: TestClient, db: Session):
         organization_id=env1["org"].id,
         event_id="evt_org1_001",
         event_type="report.available",
-        destination="https://n8n.test/webhook",
+        destination="https://flask.test/webhook",
         status="Failed",
         attempts=1,
         created_at=datetime.datetime.now(datetime.timezone.utc),

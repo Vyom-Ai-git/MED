@@ -42,7 +42,7 @@ def readiness_check(db: Session = Depends(get_db)):
             "environment": settings.ENVIRONMENT,
             "database": "connected",
             "storage": "accessible",
-            "n8n_integration_configured": bool(settings.N8N_WEBHOOK_URL)
+            "native_workflow_configured": bool(settings.FLASK_WORKFLOW_URL)
         }
     else:
         return JSONResponse(

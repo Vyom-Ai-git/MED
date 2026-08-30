@@ -61,10 +61,10 @@ try:
 except Exception as e:
     logger.warning(f"Could not auto-register audit listener: {str(e)}")
 
-# Auto-subscribe integration dispatch listener for report.available
+# Forward report.available directly to Flask, which owns the workflow execution.
 try:
     from app.services.integration import handle_report_available_event
     subscribe(EventTypes.REPORT_AVAILABLE, handle_report_available_event)
-except Exception as e:
-    logger.warning(f"Could not auto-register integration event listener: {str(e)}")
+except Exception as exc:
+    logger.warning(f"Could not register Flask workflow event listener: {exc}")
 

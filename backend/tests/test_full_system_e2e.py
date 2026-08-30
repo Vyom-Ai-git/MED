@@ -120,7 +120,7 @@ def get_auth_headers(client: TestClient, email: str) -> dict:
 def test_full_patient_to_report_and_integration_e2e(client: TestClient, db: Session):
     """
     Master Acceptance Test:
-    Patient -> Order -> Sample -> Result Entry -> Verification -> Report Generation -> PDF Text QA -> Audit -> n8n Integration Delivery
+        Patient -> Order -> Sample -> Result Entry -> Verification -> Report Generation -> PDF Text QA -> Audit -> Flask Workflow Delivery
     """
     env = setup_e2e_environment(db)
     org_id = env["org"].id
@@ -192,7 +192,7 @@ def test_full_patient_to_report_and_integration_e2e(client: TestClient, db: Sess
     }, headers=reviewer_headers)
     assert verify_res.status_code == 200
 
-    # 6. Admin Generates PDF Report (with n8n webhook mocked)
+    # 6. Admin Generates PDF Report (with Flask workflow webhook mocked)
     mock_client_instance = MagicMock()
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -204,8 +204,8 @@ def test_full_patient_to_report_and_integration_e2e(client: TestClient, db: Sess
     mock_db = MagicMock(wraps=db)
     mock_db.close = MagicMock()
 
-    with patch.object(settings, "N8N_WEBHOOK_URL", "https://n8n.test/webhook/e2e"), \
-         patch.object(settings, "N8N_WEBHOOK_SECRET", "e2e_secret_key"), \
+    with patch.object(settings, "FLASK_WORKFLOW_URL", "https://flask.test/webhook/e2e"), \
+         patch.object(settings, "FLASK_WORKFLOW_SECRET", "e2e_secret_key"), \
          patch("app.services.integration.SessionLocal", return_value=mock_db), \
          patch("app.services.integration.httpx.Client", return_value=mock_client_ctx):
 

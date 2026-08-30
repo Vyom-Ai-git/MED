@@ -41,12 +41,22 @@ class Settings:
         if origin.strip()
     ]
 
-    # n8n Integration Configuration
-    N8N_WEBHOOK_URL: str = os.getenv("N8N_WEBHOOK_URL", "")
-    N8N_WEBHOOK_SECRET: str = os.getenv("N8N_WEBHOOK_SECRET", "")
-    N8N_INTEGRATION_KEY: str = os.getenv("N8N_INTEGRATION_KEY", "")
+    # Native Flask workflow configuration
+    FLASK_WORKFLOW_URL: str = os.getenv("FLASK_WORKFLOW_URL", "")
+    FLASK_WORKFLOW_SECRET: str = os.getenv(
+        "FLASK_WORKFLOW_SECRET", os.getenv("LABOS_WEBHOOK_SECRET", "")
+    )
+    LABOS_API_KEY: str = os.getenv("LABOS_API_KEY", os.getenv("LABOS_INTEGRATION_KEY", ""))
     INTEGRATION_TIMEOUT_SECONDS: int = int(os.getenv("INTEGRATION_TIMEOUT_SECONDS", "15"))
     INTEGRATION_MAX_RETRIES: int = int(os.getenv("INTEGRATION_MAX_RETRIES", "3"))
+
+    # AI Report Assistant (Gemini) — read from environment only, never hardcoded.
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", os.getenv("AI_API_KEY", ""))
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", os.getenv("AI_MODEL", "gemini-2.0-flash"))
+
+    # Public verification links (QR codes on reports point here)
+    PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", FRONTEND_URL)
+    REPORT_VERIFY_TOKEN_DAYS: int = int(os.getenv("REPORT_VERIFY_TOKEN_DAYS", "365"))
 
     def validate_production_security(self):
         if self.ENVIRONMENT.lower() == "production":

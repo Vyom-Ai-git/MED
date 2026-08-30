@@ -188,7 +188,7 @@ def _handle_cached_or_generate_analysis(store, whatsapp, gemini, phone: str, lan
         whatsapp.send_text(phone, safe_ai_failure_message())
 
 
-def process_normalized_message(store, whatsapp, gemini, msg: dict[str, str]) -> None:
+def process_normalized_message(store, whatsapp, gemini, msg: dict[str, str], labos_client=None) -> None:
     phone = msg["phone"]
     if not msg["message_id"]:
         return
@@ -269,7 +269,7 @@ def process_normalized_message(store, whatsapp, gemini, msg: dict[str, str]) -> 
         report_id = store.get_state(phone).get("active_report_id")
         report = store.get_report_by_phone_and_id(phone, report_id) or store.get_latest_report_by_phone(phone)
         if report:
-            access = ReportAccessService(store.config)
+            access = ReportAccessService(store.config, labos_client)
             try:
                 link = access.get_patient_facing_url(report)
                 whatsapp.send_text(phone, f"Your official report link is ready:\n{link}")

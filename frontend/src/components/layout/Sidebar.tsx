@@ -45,16 +45,16 @@ export const Sidebar = () => {
     { name: "Technician Worklist", href: "/worklist", icon: Inbox },
     { name: "Verification Queue", href: "/verification", icon: CheckSquare },
     { name: "Reports Registry", href: "/reports", icon: FileText },
+    { name: "Appointments", href: "/appointments", icon: Calendar },
   ];
 
   const futureModules: NavItem[] = [
-    { name: "Appointments", href: "#", icon: Calendar, disabled: true },
     { name: "Communication", href: "#", icon: MessageSquare, disabled: true },
     { name: "Analytics", href: "#", icon: BarChart2, disabled: true },
   ];
 
   const adminModules: NavItem[] = [
-    { name: "n8n Integration", href: "/settings/integrations", icon: Zap },
+    { name: "WhatsApp Workflow", href: "/settings/integrations", icon: Zap },
     { name: "Users & Roles", href: "/settings/users", icon: ShieldAlert },
     { name: "Audit Trail", href: "/audit", icon: History },
   ];
@@ -78,7 +78,7 @@ export const Sidebar = () => {
   const filteredLab = labModules.filter(item => {
     if (role === "admin") return true;
     if (role === "reception") {
-      return ["Samples Tracker", "Reports Registry"].includes(item.name);
+      return ["Samples Tracker", "Reports Registry", "Appointments"].includes(item.name);
     }
     if (role === "technician") {
       return ["Samples Tracker", "Technician Worklist", "Reports Registry"].includes(item.name);

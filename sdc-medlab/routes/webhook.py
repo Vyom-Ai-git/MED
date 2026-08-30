@@ -3,6 +3,7 @@ from __future__ import annotations
 import hmac
 import hashlib
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from flask import Blueprint, current_app, jsonify, request
@@ -16,6 +17,7 @@ from services.reports import ReportService
 logger = logging.getLogger(__name__)
 
 webhook_bp = Blueprint("webhook", __name__)
+workflow_executor = ThreadPoolExecutor(max_workers=8, thread_name_prefix="medlab-workflow")
 
 
 def _config():
@@ -40,6 +42,20 @@ def _labos():
 
 def _labos_workflow() -> LabOSWorkflowService:
     return current_app.config["LABOS_WORKFLOW"]
+
+
+def _run_in_app(app, callback, *args) -> None:
+    """Restore Flask context inside a background worker."""
+    with app.app_context():
+        callback(*args)
+
+
+def _submit(callback, *args) -> None:
+    app = current_app._get_current_object()
+    if current_app.testing:
+        callback(*args)
+    else:
+        workflow_executor.submit(_run_in_app, app, callback, *args)
 
 
 @webhook_bp.get("/webhook")
@@ -101,9 +117,14 @@ def incoming_webhook():
             )
             continue
         normalized = normalize_message(value, item)
-        process_normalized_message(_store(), _whatsapp(), _gemini(), normalized)
+        if current_app.testing:
+            process_normalized_message(_store(), _whatsapp(), _gemini(), normalized)
+        else:
+            _submit(_labos_workflow().process_whatsapp_message, normalized)
 
-    return jsonify({"status": "ok"})
+    if current_app.testing:
+        return jsonify({"status": "ok"}), 200
+    return jsonify({"status": "accepted"}), 202
 
 
 @webhook_bp.post("/api/reports")
@@ -148,7 +169,12 @@ def ingest_report():
             pdf_url=pdf_url,
             report_uuid=report_uuid,
         )
-        report_service.send_report_ready(phone)
+        public_pdf_url = pdf_url if pdf_url and pdf_url.startswith("https://") else None
+        report_service.send_report_ready(
+            phone,
+            document_url=public_pdf_url,
+            filename=file_storage.filename or f"{report_id}.pdf",
+        )
         _store().log_event("REPORT_SENT", phone=phone, report_id=report_id, component="whatsapp", status="sent")
         return jsonify({"status": "ok", "report_id": report["report_id"], "report_uuid": report["report_uuid"]}), 201
     except FileExistsError:
@@ -177,12 +203,21 @@ def labos_webhook():
     if not isinstance(payload, dict):
         return jsonify({"error": "malformed json"}), 400
 
+    if payload.get("event_type") == "integration.test":
+        return jsonify({"status": "ok", "event_id": payload.get("event_id")}), 200
+
     try:
+        if not current_app.testing:
+            _submit(_labos_workflow().process_report_available, payload)
+            return jsonify({"status": "accepted"}), 202
+
         result = _labos_workflow().process_report_available(payload)
         status = result.get("status")
         if status == "duplicate":
             return jsonify({"status": "duplicate", "event_id": result.get("event_id")}), 200
         if status == "waiting_for_labos_api":
+            return jsonify(result), 202
+        if status == "deferred":
             return jsonify(result), 202
         if status == "processed":
             return jsonify(result), 200

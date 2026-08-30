@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
 
-load_dotenv()
+# Load Flask settings from this service directory, not from the parent
+# repository where the FastAPI backend keeps its separate .env file.
+load_dotenv(
+    dotenv_path=Path(__file__).resolve().parent / ".env",
+    override=True,
+)
 
 
 @dataclass(slots=True)
@@ -43,6 +49,16 @@ class Config:
     public_base_url: str
     max_content_length: int
 
+    @property
+    def labos_api_url(self) -> str:
+        """Canonical LabOS URL, retaining the legacy field internally."""
+        return self.labos_base_url
+
+    @property
+    def labos_api_key(self) -> str:
+        """Canonical LabOS API key, retaining the legacy field internally."""
+        return self.labos_integration_key
+
     @classmethod
     def from_env(cls) -> "Config":
         report_max_file_mb = int(os.getenv("REPORT_MAX_FILE_MB", "25"))
@@ -54,6 +70,8 @@ class Config:
         gemini_api_key = os.getenv("GEMINI_API_KEY", os.getenv("AI_API_KEY", ""))
         gemini_model = os.getenv("GEMINI_MODEL", os.getenv("AI_MODEL", ""))
         labos_access_token = os.getenv("LABOS_ACCESS_TOKEN", os.getenv("LABOS_BEARER_TOKEN", ""))
+        labos_api_url = os.getenv("LABOS_API_URL", os.getenv("LABOS_BASE_URL", ""))
+        labos_api_key = os.getenv("LABOS_API_KEY", os.getenv("LABOS_INTEGRATION_KEY", ""))
         return cls(
             mongodb_uri=os.getenv("MONGODB_URI", "mongodb://localhost:27017/"),
             mongodb_database=os.getenv("MONGODB_DATABASE", "medlab"),
@@ -77,16 +95,17 @@ class Config:
             report_ingest_api_key=os.getenv("REPORT_INGEST_API_KEY", ""),
             report_max_file_mb=report_max_file_mb,
             report_storage_dir=os.getenv("REPORT_STORAGE_DIR", "storage/reports"),
-            labos_base_url=os.getenv("LABOS_BASE_URL", ""),
-            labos_integration_key=os.getenv("LABOS_INTEGRATION_KEY", ""),
+            labos_base_url=labos_api_url,
+            labos_integration_key=labos_api_key,
             labos_webhook_secret=os.getenv("LABOS_WEBHOOK_SECRET", ""),
             labos_access_token=labos_access_token,
-            labos_timeout_seconds=int(os.getenv("LABOS_TIMEOUT_SECONDS", "15")),
+            labos_timeout_seconds=int(os.getenv("LABOS_TIMEOUT_SECONDS", "5")),
             labos_max_retries=int(os.getenv("LABOS_MAX_RETRIES", "3")),
             session_timeout_minutes=int(os.getenv("SESSION_TIMEOUT_MINUTES", "1440")),
             public_base_url=os.getenv("PUBLIC_BASE_URL", ""),
             max_content_length=report_max_file_mb * 1024 * 1024,
         )
+
 
 
 def get_config() -> Config:

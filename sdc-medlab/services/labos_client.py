@@ -31,29 +31,52 @@ class LabOSResponse:
 
 
 class LabOSClient:
+    DELAY_MESSAGE = (
+        "Our lab system is currently experiencing a delay. "
+        "Please try again in a few minutes."
+    )
+
     def __init__(self, config, session: requests.Session | None = None):
         self.config = config
         self.session = session or requests.Session()
-        self.timeout = config.labos_timeout_seconds
-        self.max_retries = config.labos_max_retries
+        self.timeout = 5
+        self.max_retries = max(1, config.labos_max_retries)
+
+    def _api_url(self) -> str:
+        return getattr(self.config, "labos_api_url", None) or self.config.labos_base_url
+
+    def _api_key(self) -> str:
+        return getattr(self.config, "labos_api_key", None) or self.config.labos_integration_key
 
     def _ensure_ready(self) -> None:
-        if not self.config.labos_base_url:
-            raise LabOSConfigError("LABOS_BASE_URL is not configured")
-        if not self.config.labos_integration_key:
-            raise LabOSConfigError("LABOS_INTEGRATION_KEY is not configured")
+        if not self._api_url():
+            raise LabOSConfigError("LABOS_API_URL (LABOS_BASE_URL) is not configured")
+        if not self._api_key():
+            raise LabOSConfigError("LABOS_API_KEY (LABOS_INTEGRATION_KEY) is not configured")
 
     def _url(self, path: str) -> str:
-        base = self.config.labos_base_url.rstrip("/")
+        base = self._api_url().rstrip("/")
         return f"{base}/{path.lstrip('/')}"
 
     def _headers(self) -> dict[str, str]:
         return {
-            "X-Integration-Key": self.config.labos_integration_key,
+            "Authorization": f"Bearer {self._api_key()}",
+            "X-API-Key": self._api_key(),
+            # Keep the contract header for older LabOS deployments.
+            "X-Integration-Key": self._api_key(),
+            "Content-Type": "application/json",
             "Accept": "application/json, application/pdf",
         }
 
-    def _request(self, method: str, path: str, *, stream: bool = False) -> requests.Response:
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        payload: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        stream: bool = False,
+    ) -> requests.Response:
         self._ensure_ready()
         url = self._url(path)
         last_error: Exception | None = None
@@ -63,6 +86,8 @@ class LabOSClient:
                     method,
                     url,
                     headers=self._headers(),
+                    json=payload,
+                    params=params,
                     timeout=self.timeout,
                     stream=stream,
                 )
@@ -72,7 +97,7 @@ class LabOSClient:
                         time.sleep(min(0.25 * attempt, 1.0))
                         continue
                 return response
-            except (requests.Timeout, requests.ConnectionError) as exc:
+            except requests.exceptions.RequestException as exc:
                 last_error = exc
                 if attempt < self.max_retries:
                     time.sleep(min(0.25 * attempt, 1.0))
@@ -83,14 +108,7 @@ class LabOSClient:
         raise LabOSClientError("LabOS request failed unexpectedly")
 
     def _json(self, method: str, path: str, *, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-        self._ensure_ready()
-        response = self.session.request(
-            method,
-            self._url(path),
-            headers=self._headers(),
-            json=payload,
-            timeout=self.timeout,
-        )
+        response = self._request(method, path, payload=payload)
         if response.status_code in {400, 401, 403, 404, 409}:
             raise LabOSClientError(f"LabOS returned HTTP {response.status_code}")
         if response.status_code >= 500:
@@ -100,12 +118,9 @@ class LabOSClient:
         except ValueError as exc:
             raise LabOSClientError("LabOS returned invalid JSON") from exc
 
-    def test_webhook(self, webhook_url: str) -> dict[str, Any]:
-        """Test n8n webhook integration.
-        
-        POST /api/v1/integrations/n8n/test
-        """
-        return self._json("POST", "/api/v1/integrations/n8n/test", payload={"webhook_url": webhook_url})
+    def test_workflow(self, webhook_url: str) -> dict[str, Any]:
+        """Test the native Flask workflow webhook."""
+        return self._json("POST", "/api/v1/integrations/test", payload={"webhook_url": webhook_url})
 
     def get_integration_logs(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
         """Get integration event logs.
@@ -128,15 +143,10 @@ class LabOSClient:
         GET /api/v1/integrations/reports/{id}/results
         Precondition: Report must be in 'verified' status (HTTP 409 if not)
         """
-        response = self.session.request(
-            "GET",
-            self._url(f"/api/v1/integrations/reports/{report_id}/results"),
-            headers=self._headers(),
-            timeout=self.timeout,
-        )
+        response = self._request("GET", f"/api/v1/integrations/reports/{report_id}/results")
         if response.status_code == 200:
             try:
-                return response.json()
+                return self.normalize_report_payload(response.json())
             except ValueError as exc:
                 raise LabOSClientError("LabOS returned invalid JSON") from exc
         if response.status_code == 409:
@@ -160,6 +170,60 @@ class LabOSClient:
         if response.status_code in {401, 403, 404, 409}:
             raise LabOSClientError(f"LabOS returned HTTP {response.status_code}")
         raise LabOSClientError(f"Unexpected LabOS download response HTTP {response.status_code}")
+
+    def get_report_pdf_link(self, report_id: str) -> str | None:
+        """Return a PDF link when LabOS exposes one in report metadata."""
+        metadata = self.get_report_metadata(report_id)
+        for key in ("pdf_url", "pdf_link", "download_url", "report_url"):
+            value = metadata.get(key)
+            if value:
+                return str(value)
+        return None
+
+    @staticmethod
+    def normalize_report_payload(payload: dict[str, Any]) -> dict[str, Any]:
+        """Map common LabOS result variants to the Gemini report shape."""
+        normalized = dict(payload or {})
+        structured = normalized.get("structured_result")
+        if isinstance(structured, dict):
+            normalized["structured_result"] = LabOSClient.normalize_report_payload(structured)
+        patient = normalized.get("patient")
+        if isinstance(patient, dict):
+            normalized.setdefault("patient_name", patient.get("name") or patient.get("full_name"))
+            normalized.setdefault(
+                "patient_phone",
+                patient.get("phone") or patient.get("whatsapp_number") or patient.get("mobile"),
+            )
+        raw_tests = normalized.get("tests") or normalized.get("result_items")
+        if raw_tests is None:
+            raw_tests = normalized.get("results") or normalized.get("parameters") or []
+        if isinstance(raw_tests, dict):
+            raw_tests = raw_tests.get("items") or raw_tests.get("tests") or []
+
+        tests = []
+        for item in raw_tests if isinstance(raw_tests, list) else []:
+            if not isinstance(item, dict):
+                continue
+            reference = item.get("reference_range")
+            if reference is None:
+                reference = item.get("reference") or item.get("normal_range")
+            value = item.get("result_value")
+            if value is None:
+                value = item.get("value") or item.get("result")
+            tests.append(
+                {
+                    "test_name": item.get("test_name") or item.get("name") or item.get("parameter"),
+                    "result_value": value,
+                    "unit": item.get("unit") or item.get("units"),
+                    "reference_range": reference,
+                    "flag": item.get("flag") or item.get("status") or item.get("interpretation"),
+                }
+            )
+        if tests:
+            normalized["tests"] = tests
+        elif "tests" not in normalized:
+            normalized["tests"] = []
+        return normalized
 
     def get_patient(self, patient_id: str) -> dict[str, Any]:
         """Patient contact lookup.

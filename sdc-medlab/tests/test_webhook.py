@@ -134,7 +134,10 @@ def test_labos_webhook_processes_report_and_is_idempotent(client, app_and_client
     )
     assert response.status_code == 200
     assert response.get_json()["status"] == "processed"
-    assert any(call[0] == "interactive" for call in fake_whatsapp.calls)
+    document = next(call for call in fake_whatsapp.calls if call[0] == "document")
+    assert document[2] == "https://labos.example/reports/RPT-101.pdf"
+    interactive = next(call for call in fake_whatsapp.calls if call[0] == "interactive")
+    assert {button["id"] for button in interactive[3]} == {"view_report", "analyze_report"}
 
     fake_whatsapp.calls.clear()
     duplicate = client.post(

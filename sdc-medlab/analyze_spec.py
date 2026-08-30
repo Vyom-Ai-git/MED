@@ -22,7 +22,7 @@ for scheme_name, scheme_details in security_schemes.items():
 print('\n=== Required Capabilities Mapping ===')
 capabilities = {
     '1. report.available webhook / integration event': [
-        '/api/v1/integrations/n8n/test',
+        '/api/v1/integrations/test',
         '/api/v1/integrations',
         '/api/v1/integrations/logs'
     ],

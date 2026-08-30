@@ -69,15 +69,15 @@ export default function IntegrationsSettingsPage() {
     setToastSuccess(null);
     setToastError(null);
     try {
-      const res = await api.post<{ success: boolean; message: string }>("/integrations/n8n/test", {});
+      const res = await api.post<{ success: boolean; message: string }>("/integrations/test", {});
       if (res.success) {
-        setToastSuccess("n8n Test Connection Succeeded! Received HTTP 2xx from webhook.");
+        setToastSuccess("Native Flask workflow is active.");
       } else {
         setToastError(`Test Failed: ${res.message}`);
       }
       fetchStatus();
     } catch (err: any) {
-      setToastError(err.detail || "Failed to connect to n8n webhook target.");
+      setToastError(err.detail || "Failed to verify the native Flask workflow.");
     } finally {
       setIsTesting(false);
     }
@@ -93,7 +93,7 @@ export default function IntegrationsSettingsPage() {
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
             <Zap className="w-5 h-5 text-teal-600" />
-            <span>n8n & WhatsApp Automation</span>
+            <span>Native WhatsApp Automation</span>
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
             Configure secure webhook integration for automated report notifications and delivery tracking.
@@ -115,7 +115,7 @@ export default function IntegrationsSettingsPage() {
             className="flex items-center gap-2 text-xs font-bold py-2.5 px-4 shadow-sm"
           >
             <Play className="w-4 h-4" />
-            <span>Test n8n Connection</span>
+            <span>Test Native Workflow</span>
           </Button>
         </div>
       </div>
@@ -150,7 +150,7 @@ export default function IntegrationsSettingsPage() {
 
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-base font-extrabold text-slate-900">n8n Webhook Integration</h2>
+                <h2 className="text-base font-extrabold text-slate-900">Flask WhatsApp Workflow</h2>
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border capitalize ${
                   isConnected
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -166,7 +166,7 @@ export default function IntegrationsSettingsPage() {
               <p className="text-xs text-slate-500 font-medium mt-1">
                 {statusData?.is_configured
                   ? `Configured Target: ${statusData.webhook_url}`
-                  : "Webhook URL not set in environment configuration (N8N_WEBHOOK_URL)."}
+                  : "Flask workflow URL is not configured (FLASK_WORKFLOW_URL)."}
               </p>
 
               <div className="flex items-center gap-4 mt-3 text-[11px] font-semibold text-slate-400">
@@ -207,7 +207,7 @@ export default function IntegrationsSettingsPage() {
             </div>
           </div>
           <span className="block text-2xl font-black text-slate-900 mt-2">{statusData?.sent_count ?? 0}</span>
-          <span className="block text-[11px] text-slate-500 font-semibold mt-1">Dispatched to n8n webhook</span>
+          <span className="block text-[11px] text-slate-500 font-semibold mt-1">Processed by native Flask workers</span>
         </Card>
 
         <Card className="p-5 border border-slate-200/80 shadow-sm bg-white">
@@ -244,14 +244,14 @@ export default function IntegrationsSettingsPage() {
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1.5">
             <span className="font-bold text-slate-800">System of Record Safety</span>
             <p className="text-slate-600 leading-relaxed font-medium">
-              LabOS is the single source of clinical truth. Results, reference ranges, and verified PDF reports remain strictly inside LabOS. WhatsApp credentials and third-party delivery logic reside entirely in n8n.
+              LabOS is the single source of clinical truth. Results, reference ranges, and verified PDF reports remain strictly inside LabOS. WhatsApp credentials and workflow logic remain inside Flask.
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1.5">
             <span className="font-bold text-slate-800">AI Safety Boundary</span>
             <p className="text-slate-600 leading-relaxed font-medium">
-              AI MUST NOT approve lab results, alter flags, diagnose patients, or modify official PDF reports. AI is used solely by n8n for communication formatting with automatic template fallback.
+              AI MUST NOT approve lab results, alter flags, diagnose patients, or modify official PDF reports. AI is used solely by Flask for communication formatting with automatic template fallback.
             </p>
           </div>
         </div>

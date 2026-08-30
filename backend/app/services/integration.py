@@ -41,10 +41,10 @@ class IntegrationService:
         event_id_override: Optional[str] = None,
     ) -> IntegrationDelivery:
         """
-        Dispatches an outbound integration event to n8n webhook.
+        Dispatches an outbound event to the native Flask workflow webhook.
         Handles idempotency, HMAC signing, HTTP delivery, retries, and audit logging.
         """
-        destination = destination_override or settings.N8N_WEBHOOK_URL
+        destination = destination_override or settings.FLASK_WORKFLOW_URL
         event_id = event_id_override or f"evt_{uuid.uuid4().hex}"
 
         # 1. Idempotency Check: if event_id already delivered, do not send again automatically
@@ -83,7 +83,7 @@ class IntegrationService:
         # If webhook URL is missing, mark as failed and return
         if not destination:
             delivery.status = "Failed"
-            delivery.error_message = "n8n Webhook URL is not configured (N8N_WEBHOOK_URL is empty)"
+            delivery.error_message = "Flask workflow URL is not configured (FLASK_WORKFLOW_URL is empty)"
             db.commit()
 
             audit_service.log(
@@ -92,7 +92,7 @@ class IntegrationService:
                 action="INTEGRATION_FAILED",
                 entity_type="INTEGRATION",
                 entity_id=str(delivery.id),
-                description=f"Integration delivery failed: N8N_WEBHOOK_URL missing for event {event_id}",
+                description=f"Native workflow delivery failed: FLASK_WORKFLOW_URL missing for event {event_id}",
                 success=False,
                 metadata_json={
                     "event_id": event_id,
@@ -118,7 +118,7 @@ class IntegrationService:
         }
 
         raw_body = json.dumps(event_payload, separators=(',', ':')).encode("utf-8")
-        signature = compute_hmac_signature(raw_body, settings.N8N_WEBHOOK_SECRET)
+        signature = compute_hmac_signature(raw_body, settings.FLASK_WORKFLOW_SECRET)
 
         headers = {
             "Content-Type": "application/json",
@@ -137,7 +137,7 @@ class IntegrationService:
 
         for attempt in range(1, max_attempts + 1):
             try:
-                logger.info(f"Attempting n8n webhook POST ({attempt}/{max_attempts}) for event {event_id} -> {destination}")
+                logger.info(f"Attempting Flask workflow POST ({attempt}/{max_attempts}) for event {event_id} -> {destination}")
                 with httpx.Client(timeout=timeout) as client:
                     resp = client.post(destination, content=raw_body, headers=headers)
                     response_status = resp.status_code
@@ -173,7 +173,7 @@ class IntegrationService:
                 action="INTEGRATION_SENT",
                 entity_type="INTEGRATION",
                 entity_id=str(delivery.id),
-                description=f"Integration event {event_type} ({event_id}) sent successfully to n8n",
+                description=f"Integration event {event_type} ({event_id}) sent successfully to Flask",
                 success=True,
                 metadata_json={
                     "event_id": event_id,
@@ -208,7 +208,7 @@ class IntegrationService:
 
     def send_test_event(self, db: Session, org_id: int) -> Tuple[bool, str, Optional[int], str]:
         """
-        Sends a safe integration.test event to n8n without patient data.
+        Sends a safe integration.test event to the native Flask workflow without patient data.
         """
         event_id = f"test_{uuid.uuid4().hex}"
         test_payload = {
@@ -219,12 +219,12 @@ class IntegrationService:
             "organization_id": org_id,
         }
 
-        destination = settings.N8N_WEBHOOK_URL
+        destination = settings.FLASK_WORKFLOW_URL
         if not destination:
-            return False, event_id, None, "N8N_WEBHOOK_URL is not configured"
+            return False, event_id, None, "FLASK_WORKFLOW_URL is not configured"
 
         raw_body = json.dumps(test_payload, separators=(',', ':')).encode("utf-8")
-        signature = compute_hmac_signature(raw_body, settings.N8N_WEBHOOK_SECRET)
+        signature = compute_hmac_signature(raw_body, settings.FLASK_WORKFLOW_SECRET)
         headers = {
             "Content-Type": "application/json",
             "X-Vyoma-Signature": f"sha256={signature}" if signature else "",
@@ -236,9 +236,9 @@ class IntegrationService:
             with httpx.Client(timeout=settings.INTEGRATION_TIMEOUT_SECONDS) as client:
                 resp = client.post(destination, content=raw_body, headers=headers)
                 if resp.status_code in (200, 201, 202):
-                    return True, event_id, resp.status_code, "n8n test webhook connection successful"
+                    return True, event_id, resp.status_code, "Native Flask workflow connection successful"
                 else:
-                    return False, event_id, resp.status_code, f"n8n test returned status {resp.status_code}: {resp.text[:200]}"
+                    return False, event_id, resp.status_code, f"Native workflow returned status {resp.status_code}: {resp.text[:200]}"
         except Exception as exc:
             return False, event_id, None, f"Connection failed: {str(exc)}"
 

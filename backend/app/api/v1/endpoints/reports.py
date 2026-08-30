@@ -192,6 +192,42 @@ def download_report_pdf(
     )
 
 
+@router.get("/{id}/verification-qr")
+def get_report_verification_qr(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Returns the same QR code image embedded on the report PDF, as a PNG,
+    for display in the app UI (staff-facing, authenticated).
+    """
+    import io
+    from app.core.config import settings
+
+    report = report_repo.get_by_id(db, org_id=current_user.organization_id, id=id)
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+    if not report.secure_token:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This report has no verification token yet")
+
+    try:
+        import qrcode
+    except ImportError:
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="QR generation library not installed")
+
+    verification_url = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/verify/{report.secure_token}"
+    qr = qrcode.QRCode(border=1, box_size=8, error_correction=qrcode.constants.ERROR_CORRECT_M)
+    qr.add_data(verification_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#0F172A", back_color="white").convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+
+    return Response(content=buf.getvalue(), media_type="image/png")
+
+
 @router.get("/{id}/metadata", response_model=dict)
 def get_report_metadata(
     id: int,
@@ -220,6 +256,11 @@ def get_report_metadata(
         verified_at = getattr(order, "verified_at", report.generated_at)
 
 
+    verification_url = None
+    if report.secure_token:
+        from app.core.config import settings
+        verification_url = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/verify/{report.secure_token}"
+
     return {
         "id": report.id,
         "report_number": report.report_number,
@@ -228,6 +269,8 @@ def get_report_metadata(
         "order_id": report.order_id,
         "order_number": order.order_number if order else "",
         "patient_id": report.patient_id,
+        "verification_url": verification_url,
+        "verification_code": report.secure_token[:10].upper() if report.secure_token else None,
         "patient_mrn": patient.patient_id if patient else "",
         "patient_name": f"{patient.first_name} {patient.last_name}" if patient else "",
         "patient_phone": patient.phone if patient else "",
@@ -311,6 +354,70 @@ def get_verified_report_results(
         "results": results,
     }
 
+
+
+@router.post("/{id}/ai-analysis", response_model=dict)
+def get_ai_report_analysis(
+    id: int,
+    language: str = Query("en", pattern="^(en|ml)$"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    AI Report Assistant: generates a plain-language explanation of a report's
+    already-verified results. Explains only — never diagnoses or prescribes.
+    Requires GEMINI_API_KEY / GEMINI_MODEL to be configured in the environment.
+    """
+    from app.models.sample import Result, Sample
+    from app.services.ai_analysis import ai_report_analyzer, AIAnalysisError
+
+    report = report_repo.get_by_id(db, org_id=current_user.organization_id, id=id)
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    order = report.order
+    results_payload: List[dict] = []
+    if order:
+        samples = db.query(Sample).filter(Sample.order_id == order.id).all()
+        for sample in samples:
+            test_results = db.query(Result).filter(Result.sample_id == sample.id).all()
+            for tr in test_results:
+                param_name = tr.parameter.name if tr.parameter else "Parameter"
+                test_name = tr.test.name if tr.test else "Diagnostic Test"
+                val = tr.raw_value or (str(tr.numeric_value) if tr.numeric_value is not None else tr.text_value or "")
+                ref_range = (
+                    f"{tr.reference_low} - {tr.reference_high}"
+                    if (tr.reference_low is not None and tr.reference_high is not None)
+                    else "N/A"
+                )
+                results_payload.append({
+                    "test_name": test_name,
+                    "parameter_name": param_name,
+                    "value": val,
+                    "unit": tr.unit or "",
+                    "reference_range": ref_range,
+                    "flag": tr.abnormal_flag or "Normal",
+                })
+
+    try:
+        analysis = ai_report_analyzer.analyze(results_payload, language=language)
+    except AIAnalysisError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+
+    audit_service.log(
+        db,
+        org_id=current_user.organization_id,
+        action="AI_REPORT_ANALYSIS_GENERATED",
+        entity_type="REPORT",
+        entity_id=str(report.id),
+        user_id=current_user.id,
+        branch_id=report.branch_id,
+        description=f"AI explanation generated for report {report.report_number}",
+        success=True,
+        metadata_json={"report_number": report.report_number, "language": language},
+    )
+
+    return {"report_id": report.id, "report_number": report.report_number, **analysis}
 
 
 @router.post("/{id}/secure-link", response_model=dict)

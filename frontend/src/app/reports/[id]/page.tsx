@@ -7,6 +7,8 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, Badge, Button, Toast } from "@/components/ui/primitives";
+import { AIReportAssistant } from "@/components/reports/AIReportAssistant";
+import { VerificationBadge } from "@/components/reports/VerificationBadge";
 import {
   FileText,
   ArrowLeft,
@@ -235,6 +237,16 @@ export default function ReportDetailPage() {
               </div>
             </div>
           </Card>
+        </div>
+
+        {/* Verification + AI Assistant modules */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+          <div className="lg:col-span-1">
+            <VerificationBadge reportId={report.id} />
+          </div>
+          <div className="lg:col-span-2">
+            <AIReportAssistant reportId={report.id} />
+          </div>
         </div>
 
         {/* Embedded PDF Viewer Component */}
