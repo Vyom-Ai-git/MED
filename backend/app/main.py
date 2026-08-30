@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 import logging
@@ -50,6 +50,21 @@ app.add_middleware(StructuredLoggingMiddleware)
 
 # Versioned API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+@app.get("/", include_in_schema=False)
+async def root_redirect():
+    return RedirectResponse(url=f"{settings.API_V1_STR}/docs")
+
+
+@app.get("/docs", include_in_schema=False)
+async def docs_redirect():
+    return RedirectResponse(url=f"{settings.API_V1_STR}/docs")
+
+
+@app.get("/health", include_in_schema=False)
+async def root_health():
+    return {"status": "ok", "service": settings.PROJECT_NAME}
 
 
 # Global Exception Handlers to mask internal secrets and database errors

@@ -75,8 +75,7 @@ def build_report_buttons() -> list[dict[str, str]]:
 def build_labos_report_buttons() -> list[dict[str, str]]:
     return [
         {"id": "view_report", "title": "View Report"},
-        {"id": "lang_en", "title": "English"},
-        {"id": "lang_ml", "title": "Malayalam"},
+        {"id": "analyze_report", "title": "Analyze with AI"},
     ]
 
 
@@ -326,6 +325,30 @@ class ReportService:
                 return report
         return self.store.get_latest_report_by_phone(phone)
 
+    def _labos_report_text(self, report: dict[str, Any]) -> str:
+        """Build a stable Gemini input from verified LabOS fields."""
+        structured = report.get("structured_result") or {}
+        tests = structured.get("tests") or structured.get("result_items") or []
+        lines = [
+            f"Patient: {report.get('patient_name') or 'Not provided'}",
+            f"Report number: {report.get('report_number') or report.get('report_id')}",
+            "Verified laboratory results:",
+        ]
+        for item in tests:
+            if not isinstance(item, dict):
+                continue
+            name = item.get("test_name") or item.get("name") or item.get("parameter") or "Test"
+            value = item.get("result_value")
+            if value is None:
+                value = item.get("value") or item.get("result") or "Not provided"
+            unit = item.get("unit") or item.get("units") or ""
+            reference = item.get("reference_range") or item.get("reference") or item.get("normal_range") or "Not provided"
+            flag = item.get("flag") or item.get("status") or item.get("interpretation") or "Not provided"
+            lines.append(
+                f"- {name}: {value} {unit}; reference range: {reference}; flag: {flag}"
+            )
+        return "\n".join(lines)
+
     def analyze_report_for_phone(self, phone: str, language: str) -> dict[str, Any]:
         language = normalize_language(language)
         state = self.store.get_state(phone)
@@ -337,8 +360,21 @@ class ReportService:
             self.store.update_report(report["report_id"], {f"summary_{language}": summary, "status": "processed"})
             return {"cached": True, "analysis": {"summary": summary, "tests": [], "key_findings": [], "doctor_discussion": [], "safety_notice": summary}, "report": report}
         if report.get("source_system") == "labos":
-            summary_payload = self.build_verified_summary(report, language)
-            if not report.get("structured_result"):
+            cached_summary = report.get("summary_en") if language == "en" else report.get("summary_ml")
+            if cached_summary:
+                return {
+                    "cached": True,
+                    "analysis": {
+                        "summary": cached_summary,
+                        "tests": [],
+                        "key_findings": [],
+                        "doctor_discussion": [],
+                        "safety_notice": "This AI explanation is for informational purposes only and is not a diagnosis or medical advice.",
+                    },
+                    "report": report,
+                }
+            report_text = self._labos_report_text(report)
+            if len(report_text.strip()) < 20:
                 self.store.log_event(
                     "REQUIRES_LABOS_VERIFIED_RESULT_API",
                     phone=phone,
@@ -346,16 +382,30 @@ class ReportService:
                     component="reports",
                     status=language,
                 )
-            self.store.update_report(
-                report["report_id"],
-                {
-                    f"summary_{language}": summary_payload["summary"],
-                    "summary_model": self.config.gemini_model or "deterministic",
-                    "status": "processed",
-                    "summarized_at": utcnow(),
-                },
-            )
-            return {"cached": True, "analysis": summary_payload, "report": report}
+                report_text = self._read_report_text(report)
+            if report_text and is_emergency_text(report_text):
+                self.store.set_state(phone, "emergency_halt", language=language, active_report_id=report["report_id"])
+                raise RuntimeError(emergency_message())
+            if len(report_text.strip()) < 20:
+                self.store.update_report(report["report_id"], {"status": "failed"})
+                raise ValueError("Verified LabOS report data is missing or insufficient for safe analysis")
+            start = utcnow()
+            self.store.log_event("ANALYSIS_STARTED", phone=phone, report_id=report["report_id"], component="gemini", status=language)
+            analysis = self.gemini.analyze_report(report_text, language)
+            summary_text = analysis.get("summary", "").strip()
+            if not summary_text:
+                raise ValueError("Gemini response is missing summary")
+            elapsed = int((utcnow() - start).total_seconds() * 1000)
+            updates = {
+                f"summary_{language}": summary_text,
+                "summary_model": self.config.gemini_model,
+                "processing_ms": elapsed,
+                "summarized_at": utcnow(),
+                "status": "processed",
+            }
+            self.store.update_report(report["report_id"], updates)
+            self.store.log_event("ANALYSIS_COMPLETED", phone=phone, report_id=report["report_id"], component="gemini", status=language, processing_ms=elapsed)
+            return {"cached": False, "analysis": analysis, "report": report}
         report_text = self._read_report_text(report)
         if report_text and is_emergency_text(report_text):
             self.store.set_state(phone, "emergency_halt", language=language, active_report_id=report["report_id"])
@@ -453,14 +503,30 @@ class ReportService:
         self.whatsapp.send_text(phone, message)
         self.whatsapp.send_interactive_buttons(phone, "What would you like to do next?", build_analysis_buttons())
 
-    def send_report_ready(self, phone: str) -> None:
+    def send_report_ready(
+        self,
+        phone: str,
+        document_url: str | None = None,
+        filename: str | None = None,
+    ) -> None:
+        if document_url:
+            self.whatsapp.send_document(phone, document_url, filename or "lab-report.pdf")
         self.whatsapp.send_interactive_buttons(
             phone,
             "Your lab report is ready.",
             build_report_buttons(),
         )
 
-    def send_labos_report_ready(self, phone: str, patient_name: str | None, report_number: str | None) -> None:
+    def send_labos_report_ready(
+        self,
+        phone: str,
+        patient_name: str | None,
+        report_number: str | None,
+        document_url: str | None = None,
+        filename: str | None = None,
+    ) -> None:
+        if document_url:
+            self.whatsapp.send_document(phone, document_url, filename or "lab-report.pdf")
         self.whatsapp.send_interactive_buttons(
             phone,
             report_ready_message(patient_name, report_number),

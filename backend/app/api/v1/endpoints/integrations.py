@@ -38,15 +38,15 @@ def get_integration_status(
     current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     """
-    Get n8n integration status and delivery counters for current organization. Admin only.
+    Get native Flask workflow status and delivery counters for current organization. Admin only.
     """
     org_id = current_user.organization_id
-    is_configured = bool(settings.N8N_WEBHOOK_URL)
+    is_configured = bool(settings.FLASK_WORKFLOW_URL)
     
     # Obscure webhook URL for display
     webhook_url_display = None
     if is_configured:
-        url = settings.N8N_WEBHOOK_URL
+        url = settings.FLASK_WORKFLOW_URL
         if len(url) > 25:
             webhook_url_display = f"{url[:15]}...{url[-8:]}"
         else:
@@ -96,13 +96,13 @@ def get_integration_status(
     }
 
 
-@router.post("/n8n/test", response_model=IntegrationTestResponse)
-def test_n8n_connection(
+@router.post("/test", response_model=IntegrationTestResponse)
+def test_native_workflow(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     """
-    Triggers safe test event (integration.test) to n8n webhook URL. Admin only. No patient data sent.
+    Triggers a safe test event to the native Flask workflow. Admin only. No patient data sent.
     """
     success, event_id, status_code, message = integration_service.send_test_event(
         db, org_id=current_user.organization_id
@@ -207,11 +207,11 @@ def m2m_download_report_pdf(
     x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
 ):
     """
-    Machine-to-Machine (M2M) secure endpoint for n8n to download report PDF.
-    Requires valid X-Integration-Key header matching N8N_INTEGRATION_KEY.
+    Machine-to-Machine (M2M) secure endpoint for the native workflow to download report PDF.
+    Requires valid X-Integration-Key header matching LABOS_API_KEY.
     Enforces tenant isolation and audits M2M access.
     """
-    configured_key = settings.N8N_INTEGRATION_KEY
+    configured_key = settings.LABOS_API_KEY
     if not configured_key or not x_integration_key or x_integration_key != configured_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -238,13 +238,13 @@ def m2m_download_report_pdf(
         entity_id=str(report.id),
         user_id=None,
         branch_id=report.branch_id,
-        description=f"M2M n8n integration downloaded report PDF {report.report_number}",
+        description=f"M2M native workflow downloaded report PDF {report.report_number}",
         ip_address=client_ip,
         user_agent=request.headers.get("user-agent"),
         success=True,
         metadata_json={
             "report_number": report.report_number,
-            "source": "m2m_n8n_integration",
+            "source": "m2m_native_workflow",
             "checksum": report.checksum,
         },
     )
@@ -267,9 +267,9 @@ def m2m_get_report_metadata(
     x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
 ):
     """
-    Machine-to-Machine (M2M) endpoint for n8n/AI orchestrators to fetch report metadata.
+    Machine-to-Machine (M2M) endpoint for the native workflow to fetch report metadata.
     """
-    configured_key = settings.N8N_INTEGRATION_KEY
+    configured_key = settings.LABOS_API_KEY
     if not configured_key or not x_integration_key or x_integration_key != configured_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -323,9 +323,9 @@ def m2m_get_verified_report_results(
     x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
 ):
     """
-    Machine-to-Machine (M2M) endpoint for n8n/AI orchestrators to fetch verified lab test results.
+    Machine-to-Machine (M2M) endpoint for the native workflow to fetch verified lab test results.
     """
-    configured_key = settings.N8N_INTEGRATION_KEY
+    configured_key = settings.LABOS_API_KEY
     if not configured_key or not x_integration_key or x_integration_key != configured_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

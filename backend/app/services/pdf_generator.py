@@ -4,10 +4,31 @@ from typing import List, Dict, Any, Optional
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, HRFlowable
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, HRFlowable, Image
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfgen import canvas
+
+
+def _build_qr_image(data: str, box_size: int = 96) -> Optional["Image"]:
+    """Render a QR code as a reportlab flowable Image. Returns None if the
+    qrcode library isn't installed or generation fails — the report must
+    still render fine without it."""
+    if not data:
+        return None
+    try:
+        import qrcode
+
+        qr = qrcode.QRCode(border=1, box_size=6, error_correction=qrcode.constants.ERROR_CORRECT_M)
+        qr.add_data(data)
+        qr.make(fit=True)
+        pil_img = qr.make_image(fill_color="#0F172A", back_color="white").convert("RGB")
+        buf = io.BytesIO()
+        pil_img.save(buf, format="PNG")
+        buf.seek(0)
+        return Image(buf, width=box_size, height=box_size)
+    except Exception:
+        return None
 
 class NumberedCanvas(canvas.Canvas):
     """
@@ -279,19 +300,48 @@ class PDFReportGenerator:
         # 5. Verification & Authorization Footer Block
         ver_by = report_data.get("verified_by_name", "Authorized Laboratory Reviewer")
         ver_at = report_data.get("verified_at", datetime.datetime.now().strftime("%d %b %Y, %H:%M UTC"))
+        verification_url = report_data.get("verification_url", "")
+        verification_code = report_data.get("verification_code", "")
 
-        auth_data = [
-            [
-                Paragraph(f"<b>Verified & Authorized By:</b><br/>{ver_by}", cell_style),
-                Paragraph(f"<b>Verification Timestamp:</b><br/>{ver_at}", cell_style),
-                Paragraph("<b>Signature:</b><br/><i>Electronically Verified</i>", cell_style),
+        qr_flowable = _build_qr_image(verification_url)
+
+        if qr_flowable is not None:
+            qr_caption_style = ParagraphStyle(
+                "QRCaption", parent=styles["Normal"], fontName="Helvetica-Bold",
+                fontSize=6.5, leading=8, textColor=colors.HexColor("#475569"), alignment=1,
+            )
+            qr_cell = [
+                qr_flowable,
+                Spacer(1, 3),
+                Paragraph("SCAN TO VERIFY", qr_caption_style),
+                Paragraph(f"Code: {verification_code}", ParagraphStyle(
+                    "QRCode", parent=qr_caption_style, fontName="Courier-Bold", fontSize=6.5,
+                )),
             ]
-        ]
-        auth_table = Table(auth_data, colWidths=[200, 170, 170])
+            auth_data = [
+                [
+                    Paragraph(f"<b>Verified & Authorized By:</b><br/>{ver_by}", cell_style),
+                    Paragraph(f"<b>Verification Timestamp:</b><br/>{ver_at}", cell_style),
+                    Paragraph("<b>Signature:</b><br/><i>Electronically Verified</i>", cell_style),
+                    qr_cell,
+                ]
+            ]
+            auth_table = Table(auth_data, colWidths=[160, 140, 130, 110])
+        else:
+            auth_data = [
+                [
+                    Paragraph(f"<b>Verified & Authorized By:</b><br/>{ver_by}", cell_style),
+                    Paragraph(f"<b>Verification Timestamp:</b><br/>{ver_at}", cell_style),
+                    Paragraph("<b>Signature:</b><br/><i>Electronically Verified</i>", cell_style),
+                ]
+            ]
+            auth_table = Table(auth_data, colWidths=[200, 170, 170])
+
         auth_table.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F8FAFC")),
             ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor("#E2E8F0")),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ALIGN', (-1,0), (-1,-1), 'CENTER'),
             ('TOPPADDING', (0,0), (-1,-1), 8),
             ('BOTTOMPADDING', (0,0), (-1,-1), 8),
         ]))

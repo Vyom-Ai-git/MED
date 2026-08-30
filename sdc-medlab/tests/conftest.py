@@ -88,6 +88,10 @@ class FakeLabOSClient:
             raise self.patient
         return self.patient or {}
 
+    def get_secure_link(self, report_id, patient_id, expires_in_hours=24):
+        self.calls.append(("get_secure_link", report_id, patient_id, expires_in_hours))
+        return {"url": f"https://labos.example/reports/{report_id}.pdf"}
+
 
 @pytest.fixture
 def app_and_clients(monkeypatch, tmp_path):

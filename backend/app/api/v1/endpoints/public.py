@@ -12,6 +12,50 @@ from app.services.audit import audit_service
 router = APIRouter()
 logger = logging.getLogger("app.api.public")
 
+
+def _mask_name(first_name: str, last_name: str) -> str:
+    """Show first name + last initial only, for anonymous QR scans."""
+    first = (first_name or "").strip()
+    last = (last_name or "").strip()
+    last_initial = f" {last[0]}." if last else ""
+    return f"{first}{last_initial}".strip() or "Patient"
+
+
+@router.get("/reports/verify/{token}")
+def verify_report_authenticity(
+    token: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Public, no-login authenticity check for a report's QR code.
+    Deliberately returns only enough to confirm the report is genuine —
+    no PDF, no phone number, no full patient name.
+    """
+    report = db.query(Report).filter(Report.secure_token == token).first()
+    if not report:
+        return {"valid": False, "reason": "not_found"}
+
+    if report.secure_token_expires_at:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        exp = report.secure_token_expires_at.replace(tzinfo=None)
+        if now > exp:
+            return {"valid": False, "reason": "expired"}
+
+    patient = report.patient
+    organization = report.organization
+
+    return {
+        "valid": True,
+        "report_number": report.report_number,
+        "status": report.status,
+        "organization_name": organization.name if organization else "Vyoma Diagnostics",
+        "patient_display_name": _mask_name(
+            patient.first_name if patient else "", patient.last_name if patient else ""
+        ),
+        "generated_at": report.generated_at,
+        "verification_code": token[:10].upper(),
+    }
+
 def get_client_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:

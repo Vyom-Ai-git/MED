@@ -6,7 +6,7 @@ from typing import Any
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from services.labos_client import LabOSClientError, LabOSContractNotReady
+from services.labos_client import LabOSClient, LabOSClientError, LabOSConfigError, LabOSContractNotReady
 from services.report_access import ReportAccessService
 from services.reports import ReportService, build_labos_report_buttons, report_ready_message, fallback_summary_message
 
@@ -22,7 +22,26 @@ class LabOSWorkflowService:
         self.labos = labos_client
         self.config = config
         self.report_service = ReportService(store, whatsapp, gemini, config)
-        self.report_access = ReportAccessService(config)
+        self.report_access = ReportAccessService(config, labos_client)
+
+    def process_whatsapp_message(self, message: dict[str, str]) -> None:
+        """Run the native WhatsApp conversation workflow in Flask."""
+        from services.conversation import process_normalized_message
+
+        try:
+            process_normalized_message(self.store, self.whatsapp, self.gemini, message, self.labos)
+        except Exception:
+            logger.exception("Native WhatsApp workflow failed")
+            phone = message.get("phone")
+            if phone:
+                self.whatsapp.send_text(phone, LabOSClient.DELAY_MESSAGE)
+                self.store.log_event(
+                    "WORKFLOW_FAILED",
+                    phone=phone,
+                    component="native_workflow",
+                    status="fallback",
+                    error_code="NATIVE_WORKFLOW_ERROR",
+                )
 
     def _report_cache_path(self, report_id: str, filename: str) -> Path:
         cache_dir = Path(self.config.report_storage_dir)
@@ -54,6 +73,7 @@ class LabOSWorkflowService:
 
     def process_report_available(self, raw_event: dict[str, Any]) -> dict[str, Any]:
         event = self._event_payload(raw_event)
+        self.report_access.labos_client = self.labos
         event_id = event["event_id"]
         if not self.store.insert_labos_event(
             {
@@ -75,8 +95,15 @@ class LabOSWorkflowService:
         try:
             try:
                 report_meta = self.labos.get_report_metadata(event["report_id"])
+                report_meta = LabOSClient.normalize_report_payload(report_meta)
             except LabOSContractNotReady:
                 report_meta = None
+            if report_meta is not None and hasattr(self.labos, "get_verified_results"):
+                try:
+                    verified = self.labos.get_verified_results(event["report_id"])
+                    report_meta["structured_result"] = LabOSClient.normalize_report_payload(verified)
+                except LabOSClientError:
+                    logger.warning("Verified result retrieval unavailable for %s", event["report_id"])
             phone = self._resolve_phone(event, report_meta)
             if not phone:
                 self.store.update_labos_event(event_id, {"status": "waiting_for_labos_api", "error": "WAITING_FOR_LABOS_API"})
@@ -101,7 +128,16 @@ class LabOSWorkflowService:
                 source_event_id=event_id,
             )
             self.store.update_labos_event(event_id, {"status": "processing"})
-            self.report_service.send_labos_report_ready(phone, report_doc.get("patient_name"), event["report_number"])
+            document_url = None
+            if hasattr(self.labos, "get_secure_link"):
+                document_url = self.report_access.get_patient_facing_url(report_doc)
+            self.report_service.send_labos_report_ready(
+                phone,
+                report_doc.get("patient_name"),
+                event["report_number"],
+                document_url=document_url,
+                filename=filename,
+            )
             self.store.set_state(
                 phone,
                 "report_available",
@@ -112,10 +148,14 @@ class LabOSWorkflowService:
             self.store.update_labos_event(event_id, {"status": "processed", "processed_at": datetime.now(timezone.utc)})
             self.store.log_event("REPORT_SENT", phone=phone, report_id=event["report_id"], component="whatsapp", status="sent")
             return {"status": "processed", "event_id": event_id, "phone": phone}
-        except LabOSClientError as exc:
-            self.store.update_labos_event(event_id, {"status": "failed", "error": str(exc)})
-            self.store.log_event("REPORT_FAILED", report_id=event["report_id"], component="labos", status="failed", error_code="LABOS_CLIENT_ERROR")
-            return {"status": "failed", "event_id": event_id}
+        except (LabOSClientError, LabOSConfigError) as exc:
+            phone = self._resolve_phone(event, report_meta)
+            delay_message = getattr(self.labos, "DELAY_MESSAGE", LabOSClient.DELAY_MESSAGE)
+            if phone:
+                self.whatsapp.send_text(phone, delay_message)
+            self.store.update_labos_event(event_id, {"status": "deferred", "error": str(exc)})
+            self.store.log_event("REPORT_DEFERRED", report_id=event["report_id"], component="labos", status="retryable", error_code="LABOS_UNAVAILABLE")
+            return {"status": "deferred", "event_id": event_id, "message": delay_message}
         except Exception as exc:
             logger.exception("LabOS report processing failed")
             self.store.update_labos_event(event_id, {"status": "failed", "error": str(exc)})

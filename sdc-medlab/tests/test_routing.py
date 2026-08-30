@@ -145,3 +145,70 @@ def test_report_followup_actions_are_sent_after_analysis(client, store, fake_wha
     )
     assert any(call[0] == "text" and "AI Report Summary" in call[2] for call in fake_whatsapp.calls)
     assert any(call[0] == "interactive" and call[2] == "What would you like to do next?" for call in fake_whatsapp.calls)
+
+
+def test_labos_report_uses_gemini_for_each_language(client, store, fake_whatsapp, fake_gemini):
+    store.upsert_report(
+        {
+            "report_id": "LABOS-RPT-1",
+            "report_uuid": "uuid-LABOS-RPT-1",
+            "phone": "919999999999",
+            "patient_id": "P001",
+            "patient_name": "Sanju",
+            "report_number": "LAB-001",
+            "source_system": "labos",
+            "structured_result": {
+                "tests": [
+                    {
+                        "test_name": "Hemoglobin",
+                        "result_value": "11.2",
+                        "unit": "g/dL",
+                        "reference_range": "12-15",
+                        "flag": "low",
+                    }
+                ]
+            },
+            "summary_en": None,
+            "summary_ml": None,
+            "status": "received",
+        }
+    )
+    client.post(
+        "/webhook",
+        json=payload_for_message(
+            {
+                "id": "msg-labos-analyze",
+                "from": "919999999999",
+                "timestamp": "1700000010",
+                "type": "interactive",
+                "interactive": {"button_reply": {"id": "analyze_report", "title": "Analyze with AI"}},
+            }
+        ),
+    )
+    client.post(
+        "/webhook",
+        json=payload_for_message(
+            {
+                "id": "msg-labos-en",
+                "from": "919999999999",
+                "timestamp": "1700000011",
+                "type": "interactive",
+                "interactive": {"button_reply": {"id": "lang_en", "title": "English"}},
+            }
+        ),
+    )
+    client.post(
+        "/webhook",
+        json=payload_for_message(
+            {
+                "id": "msg-labos-ml",
+                "from": "919999999999",
+                "timestamp": "1700000012",
+                "type": "interactive",
+                "interactive": {"button_reply": {"id": "lang_ml", "title": "Malayalam"}},
+            }
+        ),
+    )
+    assert [language for _, language in fake_gemini.calls] == ["en", "ml"]
+    assert "Hemoglobin" in fake_gemini.calls[0][0]
+    assert "reference range: 12-15" in fake_gemini.calls[0][0]

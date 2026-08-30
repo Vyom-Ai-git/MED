@@ -55,6 +55,11 @@ class TestLabOSClientAuthentication:
         assert "application/json" in headers["Accept"]
         assert "application/pdf" in headers["Accept"]
 
+    def test_headers_include_api_key_authentication(self, client):
+        headers = client._headers()
+        assert headers["Authorization"] == "Bearer test-integration-key"
+        assert headers["X-API-Key"] == "test-integration-key"
+
     def test_missing_base_url_raises_error(self, config):
         """Config error if LABOS_BASE_URL missing."""
         config.labos_base_url = None
@@ -523,12 +528,59 @@ class TestDownloadReport:
         assert result.content == pdf_content
         assert "Content-Type" in result.headers
 
+    def test_request_uses_five_second_timeout(self, client):
+        client.session.request = Mock(
+            return_value=Mock(status_code=200, json=Mock(return_value={"patient_id": "p1"}))
+        )
+
+        client.get_patient("p1")
+
+        assert client.session.request.call_args.kwargs["timeout"] == 5
+
+    def test_request_exception_is_wrapped(self, client):
+        client.session.request = Mock(side_effect=requests.exceptions.Timeout("timed out"))
+
+        with pytest.raises(LabOSClientError, match="timed out"):
+            client.get_patient("p1")
+
+    def test_alternate_result_schema_is_normalized(self, client):
+        client.session.request = Mock(
+            return_value=Mock(
+                status_code=200,
+                json=Mock(
+                    return_value={
+                        "results": [
+                            {
+                                "parameter": "Glucose",
+                                "result": 110,
+                                "units": "mg/dL",
+                                "normal_range": "70-100",
+                                "interpretation": "high",
+                            }
+                        ]
+                    }
+                ),
+            )
+        )
+
+        result = client.get_verified_results("r1")
+
+        assert result["tests"] == [
+            {
+                "test_name": "Glucose",
+                "result_value": 110,
+                "unit": "mg/dL",
+                "reference_range": "70-100",
+                "flag": "high",
+            }
+        ]
+
 
 class TestIntegrationMetadata:
     """Test integration metadata capabilities (Capability #1)."""
 
     def test_test_webhook(self, client):
-        """POST /api/v1/integrations/n8n/test tests webhook."""
+        """POST /api/v1/integrations/test tests the workflow."""
         mock_response = {
             "status": "success",
             "message": "Webhook reachable and configured",
@@ -537,7 +589,7 @@ class TestIntegrationMetadata:
             return_value=Mock(status_code=200, json=Mock(return_value=mock_response))
         )
 
-        result = client.test_webhook("https://n8n.example.com/webhook/labos")
+        result = client.test_workflow("http://localhost:5000/api/v1/webhooks/labos")
 
         assert result["status"] == "success"
 

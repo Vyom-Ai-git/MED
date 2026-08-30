@@ -10,6 +10,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   const isLoginPage = pathname === "/login";
+  const isPublicPage = isLoginPage || pathname.startsWith("/verify/");
 
   if (isLoading) {
     return (
@@ -22,8 +23,8 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Login page doesn't show sidebar or header
-  if (isLoginPage) {
+  // Login and public verification pages don't show sidebar or header
+  if (isPublicPage) {
     return <>{children}</>;
   }
 

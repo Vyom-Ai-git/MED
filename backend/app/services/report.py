@@ -1,5 +1,6 @@
 import logging
 import datetime
+import secrets
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -13,6 +14,7 @@ from app.models.user import User
 from app.services.storage import storage_service
 from app.services.pdf_generator import pdf_generator
 from app.core.events import dispatch
+from app.core.config import settings
 
 logger = logging.getLogger("app.services.report")
 
@@ -111,6 +113,14 @@ class ReportService:
         year = datetime.datetime.now().year
         report_number = f"RPT-{year}-{count:05d}"
 
+        # Mint a verification token up front so the PDF can carry a QR code
+        # that resolves to a public, no-login verification page.
+        verify_token = secrets.token_urlsafe(24)
+        verify_expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+            days=settings.REPORT_VERIFY_TOKEN_DAYS
+        )
+        verification_url = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/verify/{verify_token}"
+
         report_data = {
             "organization_name": order.organization.name if order.organization else "Vyoma Diagnostics",
             "report": {
@@ -137,6 +147,8 @@ class ReportService:
             "tests": list(tests_dict.values()),
             "verified_by_name": verifier_name,
             "verified_at": verified_at_str,
+            "verification_url": verification_url,
+            "verification_code": verify_token[:10].upper(),
         }
 
         # 3. Render PDF
@@ -162,6 +174,8 @@ class ReportService:
             checksum=checksum,
             generated_at=now,
             generated_by=user_id,
+            secure_token=verify_token,
+            secure_token_expires_at=verify_expires_at,
         )
 
         try:

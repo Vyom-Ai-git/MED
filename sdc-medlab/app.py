@@ -73,7 +73,6 @@ def create_app(testing: bool = False, mongo_client=None) -> Flask:
                     config.labos_base_url
                     and config.labos_integration_key
                     and config.labos_webhook_secret
-                    and config.labos_access_token
                 ),
                 "report_ingest_configured": bool(config.report_ingest_api_key),
                 "test_mode": config.test_mode,
