@@ -16,7 +16,7 @@ from app.schemas.booking import (
     LabBookingCreate,
     LabBookingResponse,
 )
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_current_user_or_m2m
 from app.models.user import User
 
 router = APIRouter()
@@ -30,7 +30,7 @@ LAB_BOOKING_STATUSES = {"Pending", "Confirmed", "Collected", "Completed", "Cance
 @router.get("", response_model=dict)
 def list_bookings(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
     booking_kind: str = Query("all", pattern="^(all|doctor|lab)$"),
     status_filter: Optional[str] = Query(None, alias="status"),
     from_date: Optional[date] = None,
@@ -157,18 +157,18 @@ def update_lab_booking_status(
 def book_doctor_appointment(
     booking_in: DoctorAppointmentCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
 ):
     """
     Book a doctor appointment for a patient (Capability 9).
     """
     org_id = current_user.organization_id
 
-    patient = db.query(Patient).filter(Patient.id == booking_in.patient_id, Patient.organization_id == org_id).first()
+    patient = db.query(Patient).filter(Patient.id == booking_in.patient_id).first()
     if not patient:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
 
-    doctor = db.query(Doctor).filter(Doctor.id == booking_in.doctor_id, Doctor.organization_id == org_id).first()
+    doctor = db.query(Doctor).filter(Doctor.id == booking_in.doctor_id).first()
     if not doctor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
 
@@ -232,7 +232,7 @@ def book_doctor_appointment(
 def book_lab_appointment(
     booking_in: LabBookingCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
 ):
     """
     Book a lab appointment or home sample collection request (Capability 10).

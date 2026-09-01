@@ -40,6 +40,50 @@ def get_current_user(
         )
     return user
 
+from typing import Optional
+from fastapi import Header
+from app.core.config import settings
+
+reusable_oauth2_optional = HTTPBearer(auto_error=False)
+
+def get_current_user_or_m2m(
+    db: Session = Depends(get_db),
+    token: Optional[HTTPAuthorizationCredentials] = Depends(reusable_oauth2_optional),
+    x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+) -> User:
+    configured_key = settings.LABOS_API_KEY
+    passed_key = x_integration_key or x_api_key
+    if not passed_key and token and token.credentials == configured_key:
+        passed_key = token.credentials
+
+    if configured_key and passed_key and passed_key == configured_key:
+        system_user = db.query(User).filter(User.role == "admin").first()
+        if not system_user:
+            system_user = db.query(User).first()
+        if system_user:
+            if not getattr(system_user, "organization_id", None):
+                setattr(system_user, "organization_id", 1)
+            return system_user
+
+        class M2MUser:
+            id = 1
+            organization_id = 1
+            role = "admin"
+            name = "M2M System"
+            email = "m2m@system.local"
+            status = "active"
+        return M2MUser()
+
+    if token and token.credentials:
+        return get_current_user(db=db, token=token)
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Missing or invalid authentication credentials",
+    )
+
+
 def require_roles(*roles: UserRole):
     """
     Dependency factory to check if the current user has one of the allowed roles.

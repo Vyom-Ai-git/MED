@@ -190,7 +190,7 @@ def ingest_report():
 @webhook_bp.post("/api/v1/webhooks/labos")
 def labos_webhook():
     raw_body = request.get_data(cache=True) or b""
-    signature = request.headers.get("X-Vyoma-Signature")
+    signature = request.headers.get("X-Hub-Signature-256") or request.headers.get("X-Vyoma-Signature")
     if not signature:
         return jsonify({"error": "missing signature"}), 401
     try:

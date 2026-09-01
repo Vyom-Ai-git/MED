@@ -13,12 +13,22 @@ from app.api.v1.api import api_router
 setup_logging(settings.LOG_LEVEL)
 logger = logging.getLogger("app.main")
 
+from app.core.database import Base, engine
+from app.models import (
+    user, audit, organization, customer_care, patient, booking, order,
+    branch, test, integration, sample, result_verification, doctor, report
+)
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url=f"{settings.API_V1_STR}/docs",
     redoc_url=f"{settings.API_V1_STR}/redoc",
 )
+
+@app.on_event("startup")
+def startup_db_tables():
+    Base.metadata.create_all(bind=engine)
 
 @app.get("/openapi.json", include_in_schema=False)
 async def get_openapi_json():

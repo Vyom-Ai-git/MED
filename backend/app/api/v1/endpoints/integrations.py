@@ -32,17 +32,24 @@ def get_client_ip(request: Request) -> str:
     return request.client.host if request.client else "127.0.0.1"
 
 
+from app.api.deps import get_current_user, get_current_user_or_m2m, require_roles
+
 @router.get("", response_model=IntegrationStatusResponse)
 def get_integration_status(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+    current_user: User = Depends(get_current_user_or_m2m),
 ):
     """
     Get native Flask workflow status and delivery counters for current organization. Admin only.
     """
+    if hasattr(current_user, "role") and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have enough privileges",
+        )
     org_id = current_user.organization_id
     is_configured = bool(settings.FLASK_WORKFLOW_URL)
-    
+
     # Obscure webhook URL for display
     webhook_url_display = None
     if is_configured:
@@ -201,7 +208,7 @@ def retry_integration_delivery(
 
 @router.get("/reports/{id}/download")
 def m2m_download_report_pdf(
-    id: int,
+    id: str,
     request: Request,
     db: Session = Depends(get_db),
     x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
@@ -219,7 +226,11 @@ def m2m_download_report_pdf(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    report = db.query(Report).filter(Report.id == id).first()
+    if id.isdigit():
+        report = db.query(Report).filter(Report.id == int(id)).first()
+    else:
+        report = db.query(Report).filter(Report.report_number == id).first()
+
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
@@ -262,7 +273,7 @@ def m2m_download_report_pdf(
 
 @router.get("/reports/{id}/metadata", response_model=dict)
 def m2m_get_report_metadata(
-    id: int,
+    id: str,
     db: Session = Depends(get_db),
     x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
 ):
@@ -276,7 +287,11 @@ def m2m_get_report_metadata(
             detail="Invalid or missing M2M integration key",
         )
 
-    report = db.query(Report).filter(Report.id == id).first()
+    if id.isdigit():
+        report = db.query(Report).filter(Report.id == int(id)).first()
+    else:
+        report = db.query(Report).filter(Report.report_number == id).first()
+
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
@@ -318,7 +333,7 @@ def m2m_get_report_metadata(
 
 @router.get("/reports/{id}/results", response_model=dict)
 def m2m_get_verified_report_results(
-    id: int,
+    id: str,
     db: Session = Depends(get_db),
     x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
 ):
@@ -332,7 +347,11 @@ def m2m_get_verified_report_results(
             detail="Invalid or missing M2M integration key",
         )
 
-    report = db.query(Report).filter(Report.id == id).first()
+    if id.isdigit():
+        report = db.query(Report).filter(Report.id == int(id)).first()
+    else:
+        report = db.query(Report).filter(Report.report_number == id).first()
+
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
@@ -350,7 +369,7 @@ def m2m_get_verified_report_results(
                 test_name = tr.test.name if tr.test else "Diagnostic Test"
                 val = tr.raw_value or (str(tr.numeric_value) if tr.numeric_value is not None else tr.text_value or "")
                 ref_range = f"{tr.reference_low} - {tr.reference_high}" if (tr.reference_low is not None and tr.reference_high is not None) else None
-                
+
                 results.append({
                     "test_code": f"TST-{tr.id:04d}",
                     "test_name": test_name,
@@ -375,3 +394,81 @@ def m2m_get_verified_report_results(
         "results": results,
     }
 
+
+@router.get("/patients/lookup", response_model=dict)
+def m2m_lookup_patient_communication(
+    patient_id: str,
+    db: Session = Depends(get_db),
+    x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
+):
+    """
+    Machine-to-Machine (M2M) endpoint for patient lookup by patient_id (MRN).
+    """
+    configured_key = settings.LABOS_API_KEY
+    if not configured_key or not x_integration_key or x_integration_key != configured_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing M2M integration key",
+        )
+
+    from app.models.patient import Patient
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found")
+
+    return {
+        "id": patient.id,
+        "patient_id": patient.patient_id,
+        "first_name": patient.first_name,
+        "last_name": patient.last_name,
+        "full_name": f"{patient.first_name} {patient.last_name}",
+        "phone": patient.phone,
+        "email": patient.email,
+        "communication_preference": patient.communication_preference,
+        "consent_promotional": patient.consent_promotional,
+    }
+
+@router.post("/reports/{id}/secure-link", response_model=dict)
+def m2m_generate_patient_secure_link(
+    id: str,
+    expires_in_hours: int = Query(72, ge=1, le=720),
+    db: Session = Depends(get_db),
+    x_integration_key: Optional[str] = Header(None, alias="X-Integration-Key"),
+):
+    """
+    Machine-to-Machine (M2M) endpoint to generate a secure signed token link for patient-facing report access.
+    """
+    configured_key = settings.LABOS_API_KEY
+    if not configured_key or not x_integration_key or x_integration_key != configured_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing M2M integration key",
+        )
+
+    import secrets
+    from datetime import datetime, timezone, timedelta
+
+    if id.isdigit():
+        report = db.query(Report).filter(Report.id == int(id)).first()
+    else:
+        report = db.query(Report).filter(Report.report_number == id).first()
+
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
+
+    report.secure_token = token
+    report.secure_token_expires_at = expires_at
+    db.commit()
+
+    access_url = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/api/v1/public/reports/access/{token}"
+
+    return {
+        "report_id": report.id,
+        "report_number": report.report_number,
+        "secure_token": token,
+        "url": access_url,
+        "expires_at": expires_at,
+    }

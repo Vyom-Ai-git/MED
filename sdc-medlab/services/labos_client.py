@@ -124,7 +124,7 @@ class LabOSClient:
 
     def get_integration_logs(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
         """Get integration event logs.
-        
+
         GET /api/v1/integrations/logs?limit=50&offset=0
         """
         path = f"/api/v1/integrations/logs?limit={limit}&offset={offset}"
@@ -132,14 +132,14 @@ class LabOSClient:
 
     def get_report_metadata(self, report_id: str) -> dict[str, Any]:
         """Get report metadata.
-        
+
         GET /api/v1/integrations/reports/{id}/metadata
         """
         return self._json("GET", f"/api/v1/integrations/reports/{report_id}/metadata")
 
     def get_verified_results(self, report_id: str) -> dict[str, Any]:
         """Get verified report results.
-        
+
         GET /api/v1/integrations/reports/{id}/results
         Precondition: Report must be in 'verified' status (HTTP 409 if not)
         """
@@ -157,7 +157,7 @@ class LabOSClient:
 
     def download_report(self, report_id: str) -> LabOSResponse:
         """Download report PDF.
-        
+
         GET /api/v1/integrations/reports/{id}/download
         """
         response = self._request("GET", f"/api/v1/integrations/reports/{report_id}/download", stream=True)
@@ -227,33 +227,33 @@ class LabOSClient:
 
     def get_patient(self, patient_id: str) -> dict[str, Any]:
         """Patient contact lookup.
-        
-        GET /api/v1/patients/lookup?patient_id={id}
+
+        GET /api/v1/integrations/patients/lookup?patient_id={id}
         """
-        path = f"/api/v1/patients/lookup?patient_id={patient_id}"
+        path = f"/api/v1/integrations/patients/lookup?patient_id={patient_id}"
         return self._json("GET", path)
 
     def get_secure_link(self, report_id: str, patient_id: str, expires_in_hours: int = 24) -> dict[str, Any]:
         """Generate secure patient-facing report link.
-        
-        POST /api/v1/reports/{id}/secure-link
+
+        POST /api/v1/integrations/reports/{report_id}/secure-link
         """
         payload = {
             "patient_id": patient_id,
             "expires_in_hours": expires_in_hours,
         }
-        return self._json("POST", f"/api/v1/reports/{report_id}/secure-link", payload=payload)
+        return self._json("POST", f"/api/v1/integrations/reports/{report_id}/secure-link", payload=payload)
 
     def get_test_catalog(self) -> dict[str, Any]:
         """Get available test catalog.
-        
+
         GET /api/v1/tests/catalog
         """
         return self._json("GET", "/api/v1/tests/catalog")
 
     def get_branch_availability(self, city: str | None = None) -> dict[str, Any]:
         """Get branch/location availability.
-        
+
         GET /api/v1/branches/availability[?city=...]
         """
         path = "/api/v1/branches/availability"
@@ -261,15 +261,36 @@ class LabOSClient:
             path = f"{path}?city={city}"
         return self._json("GET", path)
 
+    def get_doctors(
+        self, specialty: str | None = None, branch_id: int | None = None, q: str | None = None
+    ) -> dict[str, Any]:
+        """Get list of doctors.
+
+        GET /api/v1/doctors
+        """
+        path = "/api/v1/doctors"
+        params = []
+        if specialty:
+            params.append(f"specialty={specialty}")
+        if branch_id:
+            params.append(f"branch_id={branch_id}")
+        if q:
+            params.append(f"q={q}")
+        if params:
+            path = f"{path}?{'&'.join(params)}"
+        return self._json("GET", path)
+
     def get_doctor_availability(
-        self, doctor_id: str, from_date: str | None = None, to_date: str | None = None
+        self, doctor_id: str | int, slot_date: str | None = None, from_date: str | None = None, to_date: str | None = None
     ) -> dict[str, Any]:
         """Get doctor availability.
-        
-        GET /api/v1/doctors/{id}/availability[?from_date=...&to_date=...]
+
+        GET /api/v1/doctors/{id}/availability[?slot_date=...]
         """
         path = f"/api/v1/doctors/{doctor_id}/availability"
         params = []
+        if slot_date:
+            params.append(f"slot_date={slot_date}")
         if from_date:
             params.append(f"from_date={from_date}")
         if to_date:
@@ -280,28 +301,28 @@ class LabOSClient:
 
     def create_doctor_appointment(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Create doctor appointment booking.
-        
+
         POST /api/v1/bookings/doctor
         """
         return self._json("POST", "/api/v1/bookings/doctor", payload=payload)
 
     def create_lab_booking(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Create lab booking.
-        
+
         POST /api/v1/bookings/lab
         """
         return self._json("POST", "/api/v1/bookings/lab", payload=payload)
 
     def create_customer_care_ticket(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Create customer care support ticket.
-        
+
         POST /api/v1/customer-care/handoff
         """
         return self._json("POST", "/api/v1/customer-care/handoff", payload=payload)
 
     def get_customer_care_tickets(self, patient_id: str | None = None) -> dict[str, Any]:
         """Get customer care tickets.
-        
+
         GET /api/v1/customer-care/handoff[?patient_id=...]
         """
         path = "/api/v1/customer-care/handoff"

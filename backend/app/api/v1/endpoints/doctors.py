@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.models.doctor import Doctor, DoctorScheduleSlot
 from app.models.branch import Branch
 from app.schemas.doctor import DoctorResponse, DoctorScheduleSlotResponse, DoctorCreate
-from app.api.deps import get_current_user, require_roles
+from app.api.deps import get_current_user, get_current_user_or_m2m, require_roles
 from app.models.enums import UserRole
 from app.models.user import User
 
@@ -19,7 +19,7 @@ logger = logging.getLogger("app.api.doctors")
 @router.get("", response_model=dict)
 def get_doctors(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
     specialty: Optional[str] = None,
     branch_id: Optional[int] = None,
     q: Optional[str] = None,
@@ -119,7 +119,7 @@ def get_doctor_availability(
     id: int,
     slot_date: Optional[date] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
 ):
     """
     Get available time slots for a specific doctor.

@@ -73,18 +73,25 @@ class GeminiAnalyzer:
             from google.genai import types
 
             response = client.models.generate_content(
-                model=self.config.gemini_model,
+                model="gemini-3.6-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
                     temperature=0.2,
-                    max_output_tokens=1024,
                 ),
             )
             text = getattr(response, "text", "") or ""
             if not text:
                 raise GeminiAnalysisError("Empty Gemini response")
+            if text.startswith("```json"):
+                text = text.strip()[7:-3].strip()
+            elif text.startswith("```"):
+                text = text.strip()[3:-3].strip()
             payload = json.loads(text)
+            if isinstance(payload.get("key_findings"), str):
+                payload["key_findings"] = [payload["key_findings"]]
+            if isinstance(payload.get("doctor_discussion"), str):
+                payload["doctor_discussion"] = [payload["doctor_discussion"]]
             parsed = LabAnalysis.model_validate(payload)
             return parsed.model_dump()
         except ValidationError as exc:

@@ -20,7 +20,7 @@ class Settings:
     
     # Database
     DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", "postgresql://localhost/labos_db"
+        "DATABASE_URL", "sqlite:///./labos.db"
     )
     
     # Security

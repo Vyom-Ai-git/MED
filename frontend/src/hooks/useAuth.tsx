@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Load session from localStorage on mount
     const storedToken = localStorage.getItem("labos_token");
     const storedUser = localStorage.getItem("labos_user");
-    
+
     if (storedToken && storedUser) {
       setToken(storedToken);
       try {
@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem("labos_user");
       }
     }
-    
+
     setIsLoading(false);
   }, []);
 
@@ -54,7 +54,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Route guard
     if (!isLoading) {
       const isLoginPage = pathname === "/login";
-      if (!token && !isLoginPage) {
+      const isPublicPage = isLoginPage || pathname.startsWith("/verify/");
+      if (!token && !isPublicPage) {
         router.replace("/login");
       } else if (token && isLoginPage) {
         router.replace("/dashboard");
@@ -63,22 +64,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token, isLoading, pathname, router]);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const res = await api.post<{ access_token: string; token_type: string; user: User }>(
-        "/auth/login",
-        { email, password }
-      );
-      
-      localStorage.setItem("labos_token", res.access_token);
-      localStorage.setItem("labos_user", JSON.stringify(res.user));
-      setToken(res.access_token);
-      setUser(res.user);
-      
-      router.push("/dashboard");
-    } finally {
-      setIsLoading(false);
-    }
+    const res = await api.post<{ access_token: string; token_type: string; user: User }>(
+      "/auth/login",
+      { email, password }
+    );
+
+    localStorage.setItem("labos_token", res.access_token);
+    localStorage.setItem("labos_user", JSON.stringify(res.user));
+    setToken(res.access_token);
+    setUser(res.user);
+
+    router.push("/dashboard");
   };
 
   const logout = () => {

@@ -50,7 +50,7 @@ class PatientService:
         # Count patient rows created today within this organization
         count_today = db.query(func.count(Patient.id)).filter(
             Patient.organization_id == org_id,
-            func.date(Patient.created_at) == today
+            Patient.patient_id.like(f"PAT-{today_str}-%")
         ).scalar()
         
         sequence_num = count_today + 1

@@ -16,75 +16,80 @@ class DoctorBookingService:
     def __init__(self, labos_client: LabOSClient):
         self.labos_client = labos_client
 
-    def get_available_dates(self, doctor_id: str) -> list[str]:
-        """Get available dates for a doctor.
-        
-        Calls: GET /api/v1/doctors/{id}/availability
-        Returns: List of dates (YYYY-MM-DD format)
-        """
+    def get_doctors(self, specialty: str | None = None, branch_id: int | None = None, q: str | None = None) -> list[dict[str, Any]]:
+        """Get list of doctors from LabOS."""
+        try:
+            response = self.labos_client.get_doctors(specialty=specialty, branch_id=branch_id, q=q)
+            if isinstance(response, dict):
+                return response.get("items", [])
+            return response if isinstance(response, list) else []
+        except LabOSClientError as exc:
+            logger.error(f"Failed to get doctors list: {exc}")
+            return []
+
+    def get_available_dates(self, doctor_id: str | int) -> list[str]:
+        """Get available dates for a doctor."""
         try:
             response = self.labos_client.get_doctor_availability(doctor_id)
             slots = response.get("available_slots", [])
-            dates = sorted(set(slot.get("date") for slot in slots if slot.get("date")))
-            return dates
+            dates = sorted(set(slot.get("slot_date") or slot.get("date") for slot in slots if slot.get("slot_date") or slot.get("date")))
+            return [str(d) for d in dates]
         except LabOSClientError as exc:
             logger.error(f"Failed to get doctor {doctor_id} available dates: {exc}")
-            raise
+            return []
 
-    def get_available_slots(self, doctor_id: str, date: str) -> list[dict[str, str]]:
-        """Get available time slots for a doctor on a specific date.
-        
-        Args:
-            doctor_id: Doctor UUID
-            date: Date in YYYY-MM-DD format
-            
-        Returns:
-            List of slot dicts with 'start_time', 'end_time'
-        """
+    def get_available_slots(self, doctor_id: str | int, slot_date: str) -> list[dict[str, Any]]:
+        """Get available time slots for a doctor on a specific date."""
         try:
-            response = self.labos_client.get_doctor_availability(doctor_id, from_date=date, to_date=date)
+            response = self.labos_client.get_doctor_availability(doctor_id, slot_date=slot_date)
             slots = response.get("available_slots", [])
-            date_slots = [s for s in slots if s.get("date") == date]
-            return date_slots
+            return [s for s in slots if (s.get("slot_date") == slot_date or s.get("date") == slot_date) and not s.get("is_booked")]
         except LabOSClientError as exc:
-            logger.error(f"Failed to get doctor {doctor_id} slots for {date}: {exc}")
-            raise
+            logger.error(f"Failed to get doctor {doctor_id} slots for {slot_date}: {exc}")
+            return []
 
-    def create_booking(self, doctor_id: str, patient_id: str, date: str, time: str) -> dict[str, Any]:
-        """Create a doctor appointment booking.
-        
-        Calls: POST /api/v1/bookings/doctor
-        
-        Args:
-            doctor_id: Doctor UUID
-            patient_id: Patient UUID
-            date: Appointment date (YYYY-MM-DD)
-            time: Appointment time (HH:MM)
-            
-        Returns:
-            Booking response dict with 'appointment_id', 'status', 'confirmation_token'
-        """
-        payload = {
-            "doctor_id": doctor_id,
-            "patient_id": patient_id,
+    def create_booking(
+        self,
+        doctor_id: str | int,
+        patient_id: str | int,
+        date: str,
+        start_time: str,
+        end_time: str | None = None,
+        slot_id: int | str | None = None,
+        branch_id: int | str | None = None,
+        consultation_type: str = "in_person",
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a doctor appointment booking matching FastAPI DoctorAppointmentCreate schema."""
+        if not end_time:
+            try:
+                hh, mm = map(int, start_time.split(":")[:2])
+                end_time = f"{(hh + (mm + 30) // 60) % 24:02d}:{(mm + 30) % 60:02d}"
+            except Exception:
+                end_time = start_time
+
+        payload: dict[str, Any] = {
+            "patient_id": int(patient_id) if str(patient_id).isdigit() else patient_id,
+            "doctor_id": int(doctor_id) if str(doctor_id).isdigit() else doctor_id,
             "appointment_date": date,
-            "appointment_time": time,
+            "start_time": start_time,
+            "end_time": end_time,
+            "consultation_type": consultation_type,
         }
+        if slot_id and str(slot_id).isdigit():
+            payload["slot_id"] = int(slot_id)
+        if branch_id and str(branch_id).isdigit():
+            payload["branch_id"] = int(branch_id)
+        if notes:
+            payload["notes"] = notes
+
         try:
             response = self.labos_client.create_doctor_appointment(payload)
-            logger.info(f"Doctor appointment booked: {response.get('appointment_id')}")
+            logger.info(f"Doctor appointment booked: {response.get('booking_number') or response.get('id')}")
             return response
         except LabOSClientError as exc:
             logger.error(f"Failed to create doctor booking: {exc}")
             raise
-
-    def cancel_booking(self, booking_id: str) -> bool:
-        """Cancel a doctor appointment booking.
-        
-        Note: LabOS API does not expose a cancel endpoint in this contract.
-        This method is a placeholder for future implementation.
-        """
-        raise NotImplementedError("DOCTOR_BOOKING_CANCEL_API_NOT_PROVIDED")
 
 
 class LabBookingService:
@@ -94,85 +99,67 @@ class LabBookingService:
         self.labos_client = labos_client
 
     def get_tests(self) -> dict[str, Any]:
-        """Get available lab tests.
-        
-        Calls: GET /api/v1/tests/catalog
-        
-        Returns:
-            Catalog dict with 'tests' array
-        """
+        """Get available lab test catalog."""
         try:
             catalog = self.labos_client.get_test_catalog()
-            logger.info(f"Retrieved test catalog with {len(catalog.get('tests', []))} tests")
+            items = catalog.get("items", [])
+            logger.info(f"Retrieved test catalog with {len(items)} tests")
             return catalog
         except LabOSClientError as exc:
             logger.error(f"Failed to get test catalog: {exc}")
-            raise
+            return {"items": [], "total": 0}
 
-    def get_packages(self) -> list[dict[str, Any]]:
-        """Get lab test packages.
-        
-        Note: Not directly exposed by LabOS API. This is a placeholder.
-        """
-        raise NotImplementedError("LAB_PACKAGES_API_NOT_PROVIDED")
-
-    def get_branches(self, city: str | None = None) -> dict[str, Any]:
-        """Get available lab branches.
-        
-        Calls: GET /api/v1/branches/availability[?city=...]
-        
-        Args:
-            city: Optional city filter
-            
-        Returns:
-            Availability dict with 'branches' array
-        """
+    def get_branches(self, city: str | None = None) -> list[dict[str, Any]] | dict[str, Any]:
+        """Get available lab branches."""
         try:
-            availability = self.labos_client.get_branch_availability(city=city)
-            logger.info(f"Retrieved {len(availability.get('branches', []))} branches")
-            return availability
+            res = self.labos_client.get_branch_availability(city=city)
+            if isinstance(res, dict) and "branches" in res:
+                return res
+            branches = res if isinstance(res, list) else res.get("branches", res.get("items", []))
+            logger.info(f"Retrieved {len(branches)} branches")
+            return branches
         except LabOSClientError as exc:
             logger.error(f"Failed to get branch availability: {exc}")
-            raise
+            return []
 
-    def get_available_slots(self, branch_id: str, test_ids: list[str]) -> list[dict[str, Any]]:
-        """Get available appointment slots for a lab branch.
-        
-        Note: LabOS API does not provide a dedicated slots endpoint. 
-        This is a placeholder for future implementation.
-        """
-        raise NotImplementedError("LAB_AVAILABLE_SLOTS_API_NOT_PROVIDED")
+    def create_booking(
+        self,
+        patient_id: str | int,
+        tests_requested: list[str | dict[str, Any]] | str | None = None,
+        preferred_date: str = "2026-09-01",
+        preferred_slot: str = "Morning (09:00 AM - 12:00 PM)",
+        booking_type: str = "home_collection",
+        branch_id: int | str | None = None,
+        address: dict[str, Any] | str | None = None,
+        notes: str | None = None,
+        test_ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Create a lab booking matching FastAPI LabBookingCreate schema."""
+        raw_tests = tests_requested or test_ids or []
+        if isinstance(raw_tests, str):
+            raw_tests = [raw_tests]
 
-    def create_booking(self, patient_id: str, test_ids: list[str], branch_id: str, **kwargs) -> dict[str, Any]:
-        """Create a lab booking.
-        
-        Calls: POST /api/v1/bookings/lab
-        
-        Args:
-            patient_id: Patient UUID
-            test_ids: List of test UUIDs
-            branch_id: Branch UUID
-            **kwargs: Optional fields (preferred_date, preferred_time, notes)
-            
-        Returns:
-            Booking response dict with 'booking_id', 'status', 'confirmation_token'
-        """
-        payload = {
-            "patient_id": patient_id,
-            "test_ids": test_ids,
-            "branch_id": branch_id,
+        payload: dict[str, Any] = {
+            "patient_id": int(patient_id) if str(patient_id).isdigit() else patient_id,
+            "preferred_date": preferred_date,
+            "preferred_slot": preferred_slot,
+            "tests_requested": raw_tests,
+            "booking_type": booking_type,
         }
-        # Add optional fields if provided
-        if "preferred_date" in kwargs and kwargs["preferred_date"]:
-            payload["preferred_date"] = kwargs["preferred_date"]
-        if "preferred_time" in kwargs and kwargs["preferred_time"]:
-            payload["preferred_time"] = kwargs["preferred_time"]
-        if "notes" in kwargs and kwargs["notes"]:
-            payload["notes"] = kwargs["notes"]
+        if branch_id and str(branch_id).isdigit():
+            payload["branch_id"] = int(branch_id)
+        if address:
+            if isinstance(address, str):
+                payload["address"] = {"street": address}
+            else:
+                payload["address"] = address
+        if notes:
+            payload["notes"] = notes
 
         try:
             response = self.labos_client.create_lab_booking(payload)
-            logger.info(f"Lab booking created: {response.get('booking_id')}")
+            logger.info(f"Lab booking created: {response.get('booking_number') or response.get('id')}")
             return response
         except LabOSClientError as exc:
             logger.error(f"Failed to create lab booking: {exc}")
@@ -187,81 +174,55 @@ class CustomerCareService:
         self.labos_client = labos_client
 
     def create_request(
-        self, phone: str, message: str, category: str = "general", patient_id: str | None = None
-    ) -> bool | dict[str, Any]:
-        """Create a customer care support ticket.
-        
-        Legacy calling convention: create_request(phone, message) -> bool
-        New calling convention: create_request(phone, message, category, patient_id) -> dict
-        
-        Calls: POST /api/v1/customer-care/handoff (via LabOS)
-        Falls back to local store if LabOS unavailable
-        
-        Args:
-            phone: Phone number or contact identifier (legacy, also used as primary key)
-            message: Support message
-            category: One of: billing, appointment, report_query, general
-            patient_id: Optional patient UUID (defaults to phone if not provided)
-            
-        Returns:
-            For backward compatibility with existing code: bool if only store available,
-            dict if LabOS response available
-        """
-        if not patient_id:
-            patient_id = phone
-
-        payload = {
-            "patient_id": patient_id,
+        self,
+        phone: str,
+        message: str,
+        category: str = "report_query",
+        patient_id: str | int | None = None,
+        order_id: str | int | None = None,
+        summary: str | None = None,
+    ) -> dict[str, Any] | bool:
+        """Create a customer care support ticket matching FastAPI CustomerCareHandoffCreate schema."""
+        ticket_summary = summary or message or f"Support request from {phone}"
+        payload: dict[str, Any] = {
+            "summary": ticket_summary,
             "category": category,
-            "message": message,
-            "contact_number": phone,  # Always include phone for local compatibility
+            "channel": "whatsapp",
+            "priority": "normal",
         }
+        if patient_id and str(patient_id).isdigit():
+            payload["patient_id"] = int(patient_id)
+        if order_id and str(order_id).isdigit():
+            payload["order_id"] = int(order_id)
 
-        # Try LabOS first
         if self.labos_client:
             try:
                 response = self.labos_client.create_customer_care_ticket(payload)
-                logger.info(f"Customer care ticket created via LabOS: {response.get('ticket_id')}")
+                logger.info(f"Customer care ticket created via LabOS: {response.get('ticket_number') or response.get('id')}")
                 return response
             except LabOSClientError as exc:
                 logger.warning(f"LabOS customer care failed, falling back to local: {exc}")
 
-        # Fall back to local store
         if self.store:
             ticket = {
                 "ticket_id": str(uuid.uuid4()),
-                "phone": phone,  # Keep phone for backward compatibility with existing store queries
-                "patient_id": patient_id,
+                "phone": phone,
                 "category": category,
-                "message": message,
+                "summary": ticket_summary,
                 "status": "created",
             }
             success = self.store.create_support_ticket(ticket)
-            if success:
-                logger.info(f"Customer care ticket created locally: {ticket['ticket_id']}")
-                return success  # Return bool for backward compatibility
-            return False
+            return success
 
         raise RuntimeError("No LabOS client or local store configured")
 
     def get_tickets(self, patient_id: str | None = None) -> dict[str, Any]:
-        """Get customer care tickets.
-        
-        Calls: GET /api/v1/customer-care/handoff[?patient_id=...]
-        
-        Args:
-            patient_id: Optional patient filter
-            
-        Returns:
-            Response dict with 'tickets' array
-        """
+        """Get customer care tickets."""
         if not self.labos_client:
             raise RuntimeError("LabOSClient not configured")
 
         try:
-            response = self.labos_client.get_customer_care_tickets(patient_id=patient_id)
-            logger.info(f"Retrieved {len(response.get('tickets', []))} customer care tickets")
-            return response
+            return self.labos_client.get_customer_care_tickets(patient_id=patient_id)
         except LabOSClientError as exc:
             logger.error(f"Failed to get customer care tickets: {exc}")
             raise

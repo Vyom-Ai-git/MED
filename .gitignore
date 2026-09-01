@@ -1,1 +1,14 @@
-/.env
+# Environment / secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Credentials / private keys
+*.pem
+*.key
+credentials.json
+service-account.json
+
+# Local secrets
+secrets/

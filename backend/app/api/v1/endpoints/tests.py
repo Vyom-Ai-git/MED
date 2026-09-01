@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.schemas.test import TestCreate, TestResponse, TestUpdate, TestListResponse
 from app.repositories.test import test_repo
 from app.models.test import Test, TestParameter
-from app.api.deps import get_current_user, require_roles
+from app.api.deps import get_current_user, get_current_user_or_m2m, require_roles
 from app.models.enums import UserRole
 from app.models.user import User
 
@@ -17,7 +17,7 @@ logger = logging.getLogger("app.api.tests")
 @router.get("", response_model=TestListResponse)
 def get_tests(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
     q: Optional[str] = None,
     category: Optional[str] = None,
     status: Optional[str] = None,
@@ -47,7 +47,7 @@ def get_tests(
 @router.get("/catalog", response_model=dict)
 def get_test_catalog(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
     q: Optional[str] = None,
     category: Optional[str] = None,
 ):

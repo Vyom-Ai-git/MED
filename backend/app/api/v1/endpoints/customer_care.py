@@ -12,7 +12,7 @@ from app.schemas.customer_care import (
     CustomerCareHandoffCreate,
     CustomerCareHandoffResponse,
 )
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_current_user_or_m2m
 from app.models.user import User
 
 router = APIRouter()
@@ -23,7 +23,7 @@ logger = logging.getLogger("app.api.customer_care")
 def create_customer_care_handoff(
     handoff_in: CustomerCareHandoffCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
 ):
     """
     Create a customer care escalation/handoff ticket (Capability 11).
@@ -33,7 +33,7 @@ def create_customer_care_handoff(
     patient_name = None
     patient_phone = None
     if handoff_in.patient_id:
-        patient = db.query(Patient).filter(Patient.id == handoff_in.patient_id, Patient.organization_id == org_id).first()
+        patient = db.query(Patient).filter(Patient.id == handoff_in.patient_id).first()
         if patient:
             patient_name = f"{patient.first_name} {patient.last_name}"
             patient_phone = patient.phone
@@ -85,7 +85,7 @@ def create_customer_care_handoff(
 @router.get("/handoff", response_model=dict)
 def list_customer_care_tickets(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_m2m),
     status: Optional[str] = Query(None),
     priority: Optional[str] = Query(None),
 ):

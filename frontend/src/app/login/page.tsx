@@ -101,8 +101,12 @@ export default function LoginPage() {
                 <span>pw: <code className="text-slate-800 font-semibold">admin123</code></span>
               </div>
               <div className="flex justify-between">
-                <span>Pathologist: <code className="text-slate-800 font-semibold">anand@vyoma.com</code></span>
-                <span>pw: <code className="text-slate-800 font-semibold">pathologist123</code></span>
+                <span>Technician: <code className="text-slate-800 font-semibold">tech@vyoma.com</code></span>
+                <span>pw: <code className="text-slate-800 font-semibold">tech123</code></span>
+              </div>
+              <div className="flex justify-between">
+                <span>Reviewer: <code className="text-slate-800 font-semibold">reviewer@vyoma.com</code></span>
+                <span>pw: <code className="text-slate-800 font-semibold">reviewer123</code></span>
               </div>
             </div>
           </div>

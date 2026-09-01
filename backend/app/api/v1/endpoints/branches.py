@@ -4,7 +4,7 @@ from typing import List
 from app.core.database import get_db
 from app.schemas.branch import BranchCreate, BranchResponse, BranchUpdate
 from app.repositories.branch import branch_repo
-from app.api.deps import get_current_user, require_roles
+from app.api.deps import get_current_user, get_current_user_or_m2m, require_roles
 from app.models.enums import UserRole
 from app.models.user import User
 
@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("", response_model=List[BranchResponse])
 def get_branches(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_m2m)
 ):
     """
     List all branches of the current organization.
@@ -23,7 +23,7 @@ def get_branches(
 @router.get("/availability", response_model=List[dict])
 def get_branches_availability(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_m2m)
 ):
     """
     Get detailed branch/location availability including operating hours, services, and contact info.
